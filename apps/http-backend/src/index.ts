@@ -8,7 +8,7 @@ import {
   CreateSigninSchema,
   CreateRoomSchema,
 } from "@repo/common/types";
-import { connectDB, User, Room } from "@repo/db";
+import { connectDB, User, Room, Chat } from "@repo/db";
 import bcrypt from "bcrypt";
 
 import dotenv from 'dotenv';
@@ -18,7 +18,6 @@ dotenv.config({ path: '../../.env' });
 config();
 
 
-console.log("DATABASE_URL:", process.env.DATABASE_URL ? "✅ Loaded" : "❌ Missing");
 
 declare global {
   namespace Express {
@@ -95,7 +94,7 @@ app.post("/signin", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
-        message: "Invalid email or password",
+        message: "Invalid email",
       });
     }
 
@@ -169,6 +168,24 @@ app.post("/room", middleware, async (req, res) => {
     });
   }
 });
+
+app.get("/chat/:roomId", async (req, res) => {
+  try {
+    const roomId = req.params.roomId; // keep it string
+
+    const messages = await Chat.find({ roomId })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(50);
+
+    res.json({
+      messages
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
 
 app.listen(3001, async () => {
   console.log("HTTP server running on 3001");

@@ -13,6 +13,5 @@ export const CreateSigninSchema = z.object({
 })
 
 export const CreateRoomSchema = z.object({
-   slug:z.string(),
-   adminId : string()
+   slug: z.string()
 })
