@@ -9,7 +9,7 @@ export function middleware(req: Request, res: Response, next: NextFunction) {
   try {
     const decoded = jwt.verify(token, JWT_SECERT) as { userId: string };
 
-    req.userId = decoded.userId; // ✅ now VALID
+    req.userId = decoded.userId;
     next();
     
   } catch {

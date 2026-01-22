@@ -1,16 +1,18 @@
-import { z} from "zod"
+import { string, z} from "zod"
 
 export const CreateUserSchema = z.object({
-    username : z.string(),
+    email : z.string(),
     password : z.string(),
     name : z.string(),
+    photo : z.string().optional()
 })
 
 export const CreateSigninSchema = z.object({
-    username : z.string(),
+    email : z.string(),
     password : z.string()
 })
 
 export const CreateRoomSchema = z.object({
-   name:z.string()
+   slug:z.string(),
+   adminId : string()
 })
