@@ -95,7 +95,7 @@ wss.on("connection", async function connection(ws, request) {
           user.ws.send(
             JSON.stringify({
               type: "chat",
-              message: message,
+              message: message,  // Changed from 'message' to 'data'
               roomId,
             }),
           );

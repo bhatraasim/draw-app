@@ -169,12 +169,13 @@ app.post("/room", middleware, async (req, res) => {
   }
 });
 
-app.get("/chat/:roomId", async (req, res) => {
+app.get("/chats/:roomId", async (req, res) => {
   try {
     const roomId = req.params.roomId; // keep it string
+    console.log(req.params.roomId)
 
     const messages = await Chat.find({ roomId })
-      .sort({ createdAt: -1 }) // newest first
+      .sort({ createdAt: 1 }) // newest first
       .limit(50);
 
     res.json({
@@ -186,6 +187,43 @@ app.get("/chat/:roomId", async (req, res) => {
   }
 });
 
+// app.get("/room/:slug", async (req, res) => {
+//   try {
+//     const slug = req.params.slug; // keep it string
+
+//     const room = await Room.find({ slug })
+
+//     if (!room) {
+//       return res.status(404).json({ message: "Room not found" });
+//     }
+
+//     res.json({
+//       room
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Failed to fetch messages" });
+//   }
+// });
+
+app.get("/room/:slug", async (req, res) => {
+  try {
+    const slug = req.params.slug;
+
+    const room = await Room.findOne({ slug }); // ✅ single room
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      id: room._id,   // ✅ what frontend wants
+      slug: room.slug
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch room" });
+  }
+});
 
 app.listen(3001, async () => {
   console.log("HTTP server running on 3001");
