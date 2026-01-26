@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { config } from "dotenv";
 import { middleware } from "./middleware";
 import { JWT_SECERT } from "@repo/backend-common";
+import cors from "cors";
 import {
   CreateUserSchema,
   CreateSigninSchema,
@@ -19,6 +20,7 @@ config();
 
 
 
+
 declare global {
   namespace Express {
     interface Request {
@@ -29,6 +31,11 @@ declare global {
 
 const app = express();
 app.use(express.json());
+
+app.use(cors({
+  origin: "http://localhost:3000", // your frontend URL
+  credentials: true,
+}));
 
 app.post("/signup", async (req, res) => {
   const data = CreateUserSchema.safeParse(req.body);
