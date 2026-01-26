@@ -1,17 +1,10 @@
-
-
-// export default function Home() {
-//   return (
-//     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-//       Landing Page
-//     </div>
-//   );
-// }
-
+'use client';
 
 import { Pencil, Users, Zap, Download, Lock, Layers, ArrowRight, Github } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 function App() {
+  const Router = useRouter();
   return (
     <div className="min-h-screen bg-white">
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
@@ -24,8 +17,8 @@ function App() {
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-              <button className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors">Sign In</button>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+              <button className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors" onClick={ () => { Router.push("/signin");}} >Sign In</button>
+              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" onClick={ () => { Router.push("/signup");}}  >
                 Get Started
               </button>
             </div>
@@ -46,7 +39,8 @@ function App() {
                 Real-time collaboration made simple and beautiful.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="group px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold flex items-center justify-center">
+                <button className="group px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold flex items-center justify-center" 
+                onClick={ () => { Router.push("/dashboard");}}  >
                   Start Drawing Now
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
