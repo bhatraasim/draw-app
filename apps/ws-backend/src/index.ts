@@ -12,8 +12,6 @@ interface Users {
 }
 
 dotenv.config({ path: '../../.env' });
-
-// Load environment variables
 config();
 
 const users: Users[] = [];

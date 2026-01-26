@@ -237,7 +237,7 @@ app.listen(3001, async () => {
   
   try {
     await connectDB();
-    console.log("✅ Database connected successfully");
+    
   } catch (error) {
     console.log("❌ Database connection failed:", error);
   }

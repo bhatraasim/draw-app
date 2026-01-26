@@ -37,15 +37,14 @@ let isConnected = false;
 
 export const connectDB = async () => {
   if (isConnected) {
-    console.log('✅ MongoDB already connected');
+    
     return;
   }
 
   try {
     const mongoUri = process.env.DATABASE_URL;
     
-    console.log('📍 DATABASE_URL value:', mongoUri); // DEBUG
-    console.log('📍 First 20 chars:', mongoUri?.substring(0, 20)); // DEBUG
+    
     
     if (!mongoUri) {
       throw new Error('DATABASE_URL is not defined');
@@ -53,9 +52,9 @@ export const connectDB = async () => {
 
     await mongoose.connect(mongoUri);
     isConnected = true;
-    console.log('✅ MongoDB connected successfully');
+    
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
+    console.error(' MongoDB connection failed:', error);
     throw error;
   }
 };
