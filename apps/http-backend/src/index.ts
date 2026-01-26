@@ -178,21 +178,73 @@ app.post("/room", middleware, async (req, res) => {
 
 app.get("/chats/:roomId", async (req, res) => {
   try {
-    const roomId = req.params.roomId; // keep it string
-    console.log(req.params.roomId)
+    const roomId = req.params.roomId;
 
     const messages = await Chat.find({ roomId })
-      .sort({ createdAt: 1 }) // newest first
+      .sort({ createdAt: 1 })
       .limit(50);
 
     res.json({
       messages
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching chats:", error);
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
+
+app.get("/room/:slug", async (req, res) => {
+  try {
+    const slug = req.params.slug;
+
+    const room = await Room.findOne({ slug }); // ✅ single room
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      id: room._id,   
+      slug: room.slug
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch room" });
+  }
+});
+
+
+app.get("/getRooms", middleware, async (req, res) => {
+    try {
+        const adminId = req.userId; // comes from middleware
+
+        if (!adminId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const rooms = await Room.find({ adminId });
+
+        res.json({
+            rooms
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Internal server error: failed to fetch rooms",
+        });
+    }
+});
+
+app.listen(3001, async () => {
+  console.log("HTTP server running on 3001");
+  
+  try {
+    await connectDB();
+    
+  } catch (error) {
+    console.log("❌ Database connection failed:", error);
+  }
+});
+
 
 // app.get("/room/:slug", async (req, res) => {
 //   try {
@@ -212,33 +264,3 @@ app.get("/chats/:roomId", async (req, res) => {
 //     res.status(500).json({ error: "Failed to fetch messages" });
 //   }
 // });
-
-app.get("/room/:slug", async (req, res) => {
-  try {
-    const slug = req.params.slug;
-
-    const room = await Room.findOne({ slug }); // ✅ single room
-
-    if (!room) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    res.json({
-      id: room._id,   // ✅ what frontend wants
-      slug: room.slug
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch room" });
-  }
-});
-
-app.listen(3001, async () => {
-  console.log("HTTP server running on 3001");
-  
-  try {
-    await connectDB();
-    
-  } catch (error) {
-    console.log("❌ Database connection failed:", error);
-  }
-});
