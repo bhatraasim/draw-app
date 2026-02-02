@@ -1,66 +1,32 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine AS builder
 
-# Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ============================================
-# Builder Stage
-# ============================================
-FROM base AS builder
-
 WORKDIR /app
 
-# Copy root package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY turbo.json ./
-
-# Copy all package.json files for proper dependency resolution
-COPY apps/http-backend/package.json ./apps/http-backend/package.json
-COPY apps/ws-backend/package.json ./apps/ws-backend/package.json
-COPY apps/draw-frontend/package.json ./apps/draw-frontend/package.json
-COPY apps/web/package.json ./apps/web/package.json
-COPY packages/backend-common/package.json ./packages/backend-common/package.json
-COPY packages/common/package.json ./packages/common/package.json
-COPY packages/db/package.json ./packages/db/package.json
-COPY packages/eslint-config/package.json ./packages/eslint-config/package.json
-COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
-COPY packages/ui/package.json ./packages/ui/package.json
-
-# Install all dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY apps/http-backend ./apps/http-backend
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps ./apps
 COPY packages ./packages
 
-# Build packages first in explicit order
-RUN pnpm --filter @repo/common build
-RUN rm -f packages/backend-common/tsconfig.tsbuildinfo && pnpm --filter @repo/backend-common build
-RUN rm -f packages/db/tsconfig.tsbuildinfo && pnpm --filter @repo/db build
+RUN pnpm install --frozen-lockfile
 
-# Then build the backend
-RUN pnpm --filter http-backend build
+# Clean build cache and build the backend and its dependencies
+RUN find . -name "tsconfig.tsbuildinfo" -delete && pnpm turbo run build --filter=http-backend
 
-# ============================================
-# Runner Stage
-# ============================================
-FROM base AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Don't run production as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodeapp
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nodeapp
 
 # Copy everything from builder (simpler approach)
 COPY --from=builder --chown=nodeapp:nodejs /app ./
 
 USER nodeapp
-
 WORKDIR /app/apps/http-backend
 
 EXPOSE 3001
-
 ENV NODE_ENV=production
 
 CMD ["node", "dist/index.js"]
