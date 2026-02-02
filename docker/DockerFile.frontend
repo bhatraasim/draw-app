@@ -1,12 +1,12 @@
 FROM node:20-alpine AS base
 
-# Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ============================================
-# Builder Stage
-# ============================================
 FROM base AS builder
+
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG NEXT_PUBLIC_API_URL
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY turbo.json ./
 
-# Copy all package.json files for proper dependency resolution
+# Copy all package.json files
 COPY apps/http-backend/package.json ./apps/http-backend/package.json
 COPY apps/ws-backend/package.json ./apps/ws-backend/package.json
 COPY apps/draw-frontend/package.json ./apps/draw-frontend/package.json
@@ -33,21 +33,22 @@ RUN pnpm install --frozen-lockfile
 COPY apps/draw-frontend ./apps/draw-frontend
 COPY packages ./packages
 
+# Set environment variables for build
+ENV DATABASE_URL=$DATABASE_URL
+ENV JWT_SECRET=$JWT_SECRET
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the frontend
 RUN pnpm turbo run build --filter=draw-frontend
 
-# ============================================
-# Runner Stage
-# ============================================
 FROM base AS runner
 
 WORKDIR /app
 
-# Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy everything from builder (simpler approach)
+# Copy everything from builder
 COPY --from=builder --chown=nextjs:nodejs /app ./
 
 USER nextjs

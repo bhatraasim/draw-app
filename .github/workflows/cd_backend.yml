@@ -3,7 +3,7 @@ name: Continuous Deployment (Prod) (Backend)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -33,6 +33,9 @@ jobs:
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/draw-app-backend:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/draw-app-backend:${{ github.sha }}
+        build-args: |
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 

@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: ./docker/DockerFile.backend
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
     container_name: draw-app-backend
     restart: unless-stopped
     ports:
@@ -12,7 +15,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
-      JWT_SECERT: ${JWT_SECERT:-defaultsecret}
+      JWT_SECRET: ${JWT_SECRET:-defaultsecret}
     networks:
       - draw-app-network
 
@@ -21,6 +24,9 @@ services:
     build:
       context: .
       dockerfile: ./docker/DockerFile.ws
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
     container_name: draw-app-ws
     restart: unless-stopped
     ports:
@@ -29,7 +35,7 @@ services:
       NODE_ENV: production
       PORT: 8080
       DATABASE_URL: ${DATABASE_URL}
-      JWT_SECERT: ${JWT_SECERT:-defaultsecret}
+      JWT_SECRET: ${JWT_SECRET:-defaultsecret}
     networks:
       - draw-app-network
 
@@ -38,6 +44,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/DockerFile.frontend
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+        NEXT_PUBLIC_WS_URL: ws://localhost:8080
     container_name: draw-app-frontend
     restart: unless-stopped
     ports:
