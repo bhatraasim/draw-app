@@ -181,8 +181,8 @@ app.get("/chats/:roomId", async (req, res) => {
     const roomId = req.params.roomId;
 
     const messages = await Chat.find({ roomId })
-      .sort({ createdAt: 1 })
-      .limit(50);
+      
+      
 
     res.json({
       messages

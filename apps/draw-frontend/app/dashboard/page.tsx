@@ -92,19 +92,11 @@ export default function Dashboard() {
 
   // 3. Handle Logout (Backend + Frontend)
   const handleLogout = async () => {
-    try {
-        const token = localStorage.getItem("token");
-        // Notify backend (optional but good practice)
-        await axios.post(`${BACKEND_URL}/logout`, {}, {
-            headers: { Authorization: token }
-        });
-    } catch (error) {
-        console.error("Backend logout failed, proceeding with local logout", error);
-    } finally {
+   
         // Always clear local storage and redirect
         localStorage.removeItem("token");
         router.push("/signin");
-    }
+    
   };
 
   // Loading State
@@ -167,7 +159,7 @@ export default function Dashboard() {
                 
                 <button 
                     disabled={isCreating || !slugInput}
-                    className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 min-w-[140px]"
+                    className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 min-w-35"
                 >
                     {isCreating ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
