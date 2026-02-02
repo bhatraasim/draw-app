@@ -2,7 +2,8 @@
   "name": "@repo/backend-common",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "require": "./dist/index.js",
@@ -12,12 +13,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -b"
-  
   },
   "devDependencies": { 
     "@repo/typescript-config" : "workspace:*"
-  }
-  ,
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
