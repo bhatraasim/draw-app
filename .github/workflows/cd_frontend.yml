@@ -3,12 +3,7 @@ name: Continuous Deployment (Prod) (Frontend)
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/draw-frontend/**'
-      - 'packages/ui/**'
-      - 'docker/DockerFile.frontend'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-deploy:

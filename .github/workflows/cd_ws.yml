@@ -3,12 +3,7 @@ name: Continuous Deployment (Prod) (WebSocket)
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/ws-backend/**'
-      - 'packages/**'
-      - 'docker/DockerFile.ws'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-deploy:

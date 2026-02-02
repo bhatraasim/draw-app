@@ -3,12 +3,7 @@ name: Continuous Deployment (Prod) (Backend)
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/http-backend/**'
-      - 'packages/**'
-      - 'docker/DockerFile.backend'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-deploy:
