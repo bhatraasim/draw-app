@@ -8,7 +8,7 @@ import {
   CreateUserSchema,
   CreateSigninSchema,
   CreateRoomSchema,
-} from "@repo/common/types";
+} from "@repo/common";
 import { connectDB, User, Room, Chat } from "@repo/db";
 import bcrypt from "bcrypt";
 

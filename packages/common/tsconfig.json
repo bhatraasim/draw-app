@@ -1,10 +1,12 @@
 {
-  "extends": "../typescript-config/base.json",
+  "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "composite": true,
+    "target": "ES2022",
     "declaration": true,
+    "declarationMap": true,
+    "composite": true,
     "incremental": true
   },
   "include": ["src"]

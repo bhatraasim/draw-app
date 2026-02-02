@@ -34,8 +34,9 @@ COPY apps/ws-backend ./apps/ws-backend
 COPY packages ./packages
 
 # Build packages first in explicit order
-RUN pnpm --filter @repo/backend-common build
-RUN pnpm --filter @repo/db build
+RUN pnpm --filter @repo/common build
+RUN rm -f packages/backend-common/tsconfig.tsbuildinfo && pnpm --filter @repo/backend-common build
+RUN rm -f packages/db/tsconfig.tsbuildinfo && pnpm --filter @repo/db build
 
 # Then build the websocket backend
 RUN pnpm --filter ws-backend build
