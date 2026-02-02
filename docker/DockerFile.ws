@@ -1,0 +1,61 @@
+FROM node:20-alpine AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# ============================================
+# Builder Stage
+# ============================================
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy root package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY turbo.json ./
+
+# Copy all package.json files for proper dependency resolution
+COPY apps/http-backend/package.json ./apps/http-backend/package.json
+COPY apps/ws-backend/package.json ./apps/ws-backend/package.json
+COPY apps/draw-frontend/package.json ./apps/draw-frontend/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages/backend-common/package.json ./packages/backend-common/package.json
+COPY packages/common/package.json ./packages/common/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/eslint-config/package.json ./packages/eslint-config/package.json
+COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
+
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
+COPY apps/ws-backend ./apps/ws-backend
+COPY packages ./packages
+
+# Build the websocket service and its dependencies
+RUN pnpm turbo run build --filter=ws-backend
+
+# ============================================
+# Runner Stage
+# ============================================
+FROM base AS runner
+
+WORKDIR /app
+
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nodeapp
+
+# Copy everything from builder (simpler approach)
+COPY --from=builder --chown=nodeapp:nodejs /app ./
+
+USER nodeapp
+
+WORKDIR /app/apps/ws-backend
+
+EXPOSE 8080
+
+ENV NODE_ENV=production
+
+CMD ["node", "dist/index.js"]
