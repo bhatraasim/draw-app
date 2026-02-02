@@ -33,8 +33,12 @@ RUN pnpm install --frozen-lockfile
 COPY apps/ws-backend ./apps/ws-backend
 COPY packages ./packages
 
-# Build the websocket service and its dependencies
-RUN pnpm turbo run build --filter=ws-backend
+# Build packages first in explicit order
+RUN pnpm --filter @repo/backend-common build
+RUN pnpm --filter @repo/db build
+
+# Then build the websocket backend
+RUN pnpm --filter ws-backend build
 
 # ============================================
 # Runner Stage

@@ -33,8 +33,12 @@ RUN pnpm install --frozen-lockfile
 COPY apps/http-backend ./apps/http-backend
 COPY packages ./packages
 
-# Build the backend and its dependencies
-RUN pnpm turbo run build --filter=http-backend
+# Build packages first in explicit order
+RUN pnpm --filter @repo/backend-common build
+RUN pnpm --filter @repo/db build
+
+# Then build the backend
+RUN pnpm --filter http-backend build
 
 # ============================================
 # Runner Stage
