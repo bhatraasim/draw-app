@@ -1,12 +1,7 @@
 services:
   # HTTP Backend Service
   http-backend:
-    build:
-      context: .
-      dockerfile: ./docker/DockerFile.backend
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
+    image: ${DOCKERHUB_USERNAME:-raasim}/draw-app-backend:latest
     container_name: draw-app-backend
     restart: unless-stopped
     ports:
@@ -22,12 +17,7 @@ services:
 
   # WebSocket Backend Service
   ws-backend:
-    build:
-      context: .
-      dockerfile: ./docker/DockerFile.ws
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
+    image: ${DOCKERHUB_USERNAME:-raasim}/draw-app-ws:latest
     container_name: draw-app-ws
     restart: unless-stopped
     ports:
@@ -42,14 +32,7 @@ services:
 
   # Frontend Service
   draw-frontend:
-    build:
-      context: .
-      dockerfile: ./docker/DockerFile.frontend
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-        JWT_SECRET: ${JWT_SECRET:-defaultsecret}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8080}
+    image: ${DOCKERHUB_USERNAME:-raasim}/draw-app-frontend:latest
     container_name: draw-app-frontend
     restart: unless-stopped
     ports:

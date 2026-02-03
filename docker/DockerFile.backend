@@ -1,8 +1,5 @@
 FROM node:20-alpine AS builder
 
-ARG DATABASE_URL
-ARG JWT_SECRET
-
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
@@ -12,10 +9,6 @@ COPY apps ./apps
 COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
-
-# Set environment variables for build process
-ENV DATABASE_URL=$DATABASE_URL
-ENV JWT_SECRET=$JWT_SECRET
 
 # Clean build cache and build the backend and its dependencies
 RUN find . -name "tsconfig.tsbuildinfo" -delete && pnpm turbo run build --filter=http-backend

@@ -4,8 +4,6 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 FROM base AS builder
 
-ARG DATABASE_URL
-ARG JWT_SECRET
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_WS_URL
 
@@ -34,9 +32,7 @@ RUN pnpm install --frozen-lockfile
 COPY apps/draw-frontend ./apps/draw-frontend
 COPY packages ./packages
 
-# Set environment variables for build
-ENV DATABASE_URL=$DATABASE_URL
-ENV JWT_SECRET=$JWT_SECRET
+# Set environment variables for build (Next.js reads NEXT_PUBLIC_* at build time)
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 
