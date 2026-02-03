@@ -1,10 +1,10 @@
 "use client"
 import { useEffect, useRef, useState } from "react";
 import { IconButton } from "./IconButton";
-import { Circle, Pencil, Square } from "lucide-react";
+import { ALargeSmall, Circle, Pencil, Square } from "lucide-react";
 import { Game } from "../draw/Game";
 
-export type Tool = "circle" | "pencil" | "rect";
+export type Tool = "circle" | "pencil" | "rect" | "line" | "text";
 
 export default function CCanvas({ roomId, socket }: { roomId: string, socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,6 +63,7 @@ function Topbar({ selectedTool, setSelectedTool }: { selectedTool: Tool, setSele
             <IconButton activated={selectedTool === "pencil"} icon={<Pencil />} onclick={() => setSelectedTool("pencil")} />
             <IconButton activated={selectedTool === "rect"} icon={<Square />} onclick={() => setSelectedTool("rect")} />
             <IconButton activated={selectedTool === "circle"} icon={<Circle />} onclick={() => setSelectedTool("circle")} />
+            <IconButton activated={selectedTool === "text"} icon={<ALargeSmall />} onclick={() => setSelectedTool("text")} />
         </div>
     );
 }
