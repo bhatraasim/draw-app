@@ -33,7 +33,27 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: "http://localhost:3000", // your frontend URL
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost')) return callback(null, true);
+    
+    // Allow your VM IP addresses (replace with your actual VM IP)
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://35.172.146.68:3000",
+      // Add your VM's public IP here
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
