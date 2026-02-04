@@ -1,7 +1,14 @@
-export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "");
+const isDev = process.env.NODE_ENV === "development";
 
-export const WS_URL =
-  process.env.NEXT_PUBLIC_WS_URL ??
-  (process.env.NODE_ENV === "development" ? "ws://localhost:8080" : "");
+const backendUrlFromEnv = process.env.NEXT_PUBLIC_API_URL;
+if (!backendUrlFromEnv && !isDev) {
+  throw new Error("NEXT_PUBLIC_API_URL is required for production builds");
+}
+
+const wsUrlFromEnv = process.env.NEXT_PUBLIC_WS_URL;
+if (!wsUrlFromEnv && !isDev) {
+  throw new Error("NEXT_PUBLIC_WS_URL is required for production builds");
+}
+
+export const BACKEND_URL = backendUrlFromEnv ?? "http://localhost:3001";
+export const WS_URL = wsUrlFromEnv ?? "ws://localhost:8080";
