@@ -1,135 +1,102 @@
-# Turborepo starter
+# Draw App
 
-This Turborepo starter is maintained by the Turborepo core team.
+A pnpm + Turborepo monorepo with Next.js frontends and Node/TypeScript backends.
 
-## Using this example
+## Getting Started
 
-Run the following command:
+Install dependencies:
 
-```sh
-npx create-turbo@latest
+```bash
+pnpm install
 ```
 
 ## What's inside?
 
-This Turborepo includes the following packages/apps:
+### Apps
 
-### Apps and Packages
+- `web`: [Next.js](https://nextjs.org/) app (ESM) on port 3002
+- `draw-frontend`: [Next.js](https://nextjs.org/) app with separate config
+- `http-backend`: Express + JWT + Mongo (CommonJS via `tsc -b`)
+- `ws-backend`: WebSocket server + JWT + Mongo (CommonJS via `tsc -b`)
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Packages
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- `@repo/ui`: shared React component library
+- `@repo/common`: shared Zod schemas
+- `@repo/backend-common`: shared backend constants (e.g., `JWT_SECRET`)
+- `@repo/db`: Mongoose models + `connectDB()`
+- `@repo/eslint-config`: shared flat ESLint configs
+- `@repo/typescript-config`: shared `tsconfig` presets
 
-### Utilities
+All packages/apps are 100% [TypeScript](https://www.typescriptlang.org/) with strict mode enabled.
 
-This Turborepo has some additional tools already setup for you:
+## Commands
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+Run all commands from the repo root.
 
 ### Develop
 
-To develop all apps and packages, run the following command:
+```bash
+# All workspaces
+pnpm dev
 
-```
-cd my-turborepo
+# Single workspace (Turbo filter)
+pnpm dev -- --filter=web
+pnpm dev -- --filter=http-backend
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# Single workspace (pnpm filter)
+pnpm --filter draw-frontend dev
+pnpm --filter @repo/ui dev
 ```
 
-### Remote Caching
+### Build
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+```bash
+# All workspaces
+pnpm build
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+# Single workspace
+pnpm build -- --filter=@repo/db
+pnpm build -- --filter=web
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### Lint
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+```bash
+# All workspaces
+pnpm lint
 
+# Single workspace
+pnpm lint -- --filter=web
+pnpm lint -- --filter=@repo/ui
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+### Type Check
+
+```bash
+# All workspaces
+pnpm check-types
+
+# Single workspace
+pnpm check-types -- --filter=web
 ```
+
+### Format
+
+```bash
+pnpm format
+```
+
+## Architecture
+
+- **Package manager**: pnpm@10 (requires Node >=18)
+- **Orchestration**: Turborepo (tasks: `build`, `dev`, `lint`, `check-types`)
+- **Formatting**: Prettier (targets `**/*.{ts,tsx,md}`)
+- **Linting**: ESLint v9 flat config
 
 ## Useful Links
 
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- [Turborepo Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
+- [Turborepo Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
+- [Turborepo Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
+- [Turborepo Configuration](https://turborepo.dev/docs/reference/configuration)
