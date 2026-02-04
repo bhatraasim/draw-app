@@ -1,10 +1,5 @@
+import { AuthPage } from "../components/AuthPage";
 
-import AuthPage from '../components/AuthPage'
-
-function page() {
-  return (
-    <AuthPage isSignin={true} />
-  )
+export default function SignInPage() {
+  return <AuthPage initialMode="signin" />;
 }
-
-export default page

@@ -308,7 +308,6 @@
 //   }
 // }
 
-
 import { getExistingShape } from "./http";
 import { Tool } from "../components/CCanvas";
 
@@ -415,7 +414,7 @@ export class Game {
   }
 
   clearCanvas() {
-    this.ctx.fillStyle = "black";
+    this.ctx.fillStyle = "#1a1a1a";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.ctx.strokeStyle = "white";
@@ -498,7 +497,7 @@ export class Game {
 
     const handleSave = () => {
       if (!this.isTextInputActive) return;
-      
+
       const text = input.value.trim();
       if (text) {
         const shape: Shape = {
@@ -552,7 +551,7 @@ export class Game {
     });
 
     document.body.appendChild(input);
-    
+
     // Use requestAnimationFrame to ensure the input is in the DOM before focusing
     requestAnimationFrame(() => {
       if (this.textInput === input) {

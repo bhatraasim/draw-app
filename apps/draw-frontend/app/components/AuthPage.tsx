@@ -1,100 +1,37 @@
-"use client"
-import { Input } from "@repo/ui/inputBox"
-import { useState } from "react"
-import { BACKEND_URL } from "../conif"
+"use client";
 
-// function AuthPage({isSignin}: {isSignin: boolean}) {
-//   return (
-//     <div className='h-screen w-screen flex justify-center items-center '  >
-
-//       <div className=" m-2 bg-white rounded-2xl text-black flex flex-col w-80 shadow-lg p-10 gap-5">
-
-//         <Input
-//             label="Email"
-//             placeholder="Enter canvas Email"
-//             type="email"            
-//           />
-//           <Input
-//             label="Password"
-//             placeholder="Enter canvas Email"
-//             type="password"
-            
-//           />
-//           { !isSignin &&
-//             <Input
-//               label="Name"
-//               placeholder="Enter your Name"
-//               type="text"            
-//             />
-//           }
-
-//         <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full" onClick={()=>{
-
-//         }}>
-//           {isSignin ? 'Sign In' : 'Sign Up'}
-//         </button>
-
-
-//       </div>
-//     </div>
-//   )
-// }
-
-// export default AuthPage
-
-
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { StudioButton } from "./StudioButton";
+import { StudioInput } from "./StudioInput";
+import { GlassPanel } from "./GlassPanel";
+import { Sparkles, Zap, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BACKEND_URL } from "../conif";
 
 interface AuthPageProps {
-  isSignin: boolean
+  initialMode?: "signin" | "signup";
 }
 
-function AuthPage({ isSignin }: AuthPageProps) {
-  const [email, setEmail] = useState<string>("")
-  const [password, setPassword] = useState<string>("")
-  const [name, setName] = useState<string>("")
-  const [error, setError] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(false)
+export function AuthPage({ initialMode = "signin" }: AuthPageProps) {
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const validateForm = (): boolean => {
-    if (!email || !password) {
-      setError("Email and password are required")
-      return false
-    }
-    
-    if (!isSignin && !name) {
-      setError("Name is required for sign up")
-      return false
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address")
-      return false
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
-      return false
-    }
-
-    return true
-  }
-
-  const handleSubmit = async (): Promise<void> => {
-    setError("")
-    
-    if (!validateForm()) {
-      return
-    }
-
-    setLoading(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      
-      const endpoint = isSignin ? `${BACKEND_URL}/signin` : `${BACKEND_URL}/signup`
-      const payload = isSignin 
-        ? { email, password }
-        : { email, password, name }
+      const endpoint =
+        mode === "signin" ? `${BACKEND_URL}/signin` : `${BACKEND_URL}/signup`;
+      const payload =
+        mode === "signin" ? { email, password } : { email, password, name };
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -102,118 +39,246 @@ function AuthPage({ isSignin }: AuthPageProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        // Handle specific error messages from backend
-        setError(data.message || "An error occurred. Please try again.")
-        return
+        setError(data.message || "An error occurred. Please try again.");
+        return;
       }
 
       // For signin, store the token
-      if (isSignin && data.token) {
-        localStorage.setItem("token", data.token)
+      if (mode === "signin" && data.token) {
+        localStorage.setItem("token", data.token);
       }
-      
-      // Success
-      alert(`${isSignin ? 'Sign in' : 'Sign up'} successful!`)
-      
-      // Reset form
-      setEmail("")
-      setPassword("")
-      setName("")
-      
-      // You can redirect here or update app state
-      // window.location.href = "/dashboard"
-      
-    } catch (err) {
-      console.error("Auth error:", err)
-      setError("Network error. Please check your connection and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (e.key === 'Enter') {
-      handleSubmit()
+      // Navigate to dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Auth error:", err);
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const benefits = [
+    { icon: <Sparkles className="w-5 h-5" />, text: "Unlimited canvases" },
+    { icon: <Zap className="w-5 h-5" />, text: "Real-time collaboration" },
+    { icon: <Shield className="w-5 h-5" />, text: "Secure and private" },
+  ];
 
   return (
-    <div className="h-screen w-screen flex justify-center items-center bg-linear-to-br from-blue-50 to-indigo-100">
-      <div className="m-2 bg-white rounded-2xl text-black flex flex-col w-80 shadow-lg p-10 gap-5">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {isSignin ? 'Welcome Back' : 'Create Account'}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {isSignin ? 'Sign in to continue' : 'Sign up to get started'}
-          </p>
-        </div>
-
-        <div onKeyPress={handleKeyPress}>
-          <Input
-            label="Email"
-            placeholder="Enter your email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-        <div onKeyPress={handleKeyPress}>
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        {!isSignin && (
-          <div onKeyPress={handleKeyPress}>
-            <Input
-              label="Name"
-              placeholder="Enter your name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+    <div className="min-h-screen flex">
+      {/* Left Side - Story */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="hidden lg:flex lg:w-[45%] bg-linear-to-br from-accent/10 via-accent/5 to-transparent p-12 flex-col justify-between relative overflow-hidden"
+      >
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 400 600">
+            <motion.circle
+              cx="100"
+              cy="100"
+              r="80"
+              stroke="#3050FF"
+              strokeWidth="2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
             />
-          </div>
-        )}
-
-        {error && (
-          <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        <button
-          className={`bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full font-medium transition-colors ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Please wait...' : isSignin ? 'Sign In' : 'Sign Up'}
-        </button>
-
-        <div className="text-center text-sm text-gray-600">
-          {isSignin ? "Don't have an account? " : "Already have an account? "}
-          <button 
-            className="text-blue-500 hover:underline font-medium"
-            onClick={() => window.location.reload()}
-          >
-            {isSignin ? 'Sign Up' : 'Sign In'}
-          </button>
+            <motion.rect
+              x="250"
+              y="200"
+              width="120"
+              height="120"
+              stroke="#1A1A1B"
+              strokeWidth="2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{
+                duration: 2,
+                delay: 0.5,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+            />
+          </svg>
         </div>
+
+        <div className="relative z-10">
+          <h1 className="font-display text-5xl text-ink mb-4">Studio Canvas</h1>
+          <p className="font-ui text-xl text-ink/70">Where ideas take shape</p>
+        </div>
+
+        <div className="relative z-10 space-y-6">
+          {benefits.map((benefit, index) => (
+            <motion.div
+              key={benefit.text}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                {benefit.icon}
+              </div>
+              <span className="font-ui text-lg text-ink">{benefit.text}</span>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md"
+        >
+          <GlassPanel animate={false} className="p-8 md:p-10">
+            {/* Toggle between Sign In and Sign Up */}
+            <div className="flex gap-2 mb-8 p-1 bg-muted/30 rounded-lg">
+              <button
+                onClick={() => setMode("signin")}
+                className={`flex-1 py-2 px-4 rounded-md font-ui transition-all duration-200 ${
+                  mode === "signin"
+                    ? "bg-accent text-white"
+                    : "text-ink hover:bg-muted/50"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setMode("signup")}
+                className={`flex-1 py-2 px-4 rounded-md font-ui transition-all duration-200 ${
+                  mode === "signup"
+                    ? "bg-accent text-white"
+                    : "text-ink hover:bg-muted/50"
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.form
+                key={mode}
+                initial={{ opacity: 0, x: mode === "signin" ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: mode === "signin" ? 20 : -20 }}
+                transition={{ duration: 0.3 }}
+                onSubmit={handleSubmit}
+                className="space-y-6"
+              >
+                <h2 className="font-display text-3xl text-ink mb-6">
+                  {mode === "signin" ? "Welcome back" : "Create account"}
+                </h2>
+
+                {error && (
+                  <div className="p-3 bg-danger/10 text-danger rounded-lg text-sm font-ui animate-shake">
+                    {error}
+                  </div>
+                )}
+
+                {mode === "signup" && (
+                  <StudioInput
+                    label="Name"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setName(e.target.value)
+                    }
+                    required
+                  />
+                )}
+
+                <StudioInput
+                  label="Email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEmail(e.target.value)
+                  }
+                  required
+                />
+
+                <StudioInput
+                  label="Password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setPassword(e.target.value)
+                  }
+                  showPasswordToggle
+                  required
+                />
+
+                {mode === "signin" && (
+                  <div className="flex items-center justify-between text-sm">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-muted accent-accent"
+                      />
+                      <span className="font-ui text-ink/70">Remember me</span>
+                    </label>
+                    <a href="#" className="font-ui text-accent hover:underline">
+                      Forgot password?
+                    </a>
+                  </div>
+                )}
+
+                <StudioButton
+                  type="submit"
+                  className="w-full"
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Please wait..."
+                    : mode === "signin"
+                      ? "Sign In"
+                      : "Create Account"}
+                </StudioButton>
+
+                {mode === "signup" && (
+                  <p className="text-sm text-ink/60 font-ui text-center">
+                    By signing up, you agree to our Terms of Service and Privacy
+                    Policy
+                  </p>
+                )}
+              </motion.form>
+            </AnimatePresence>
+          </GlassPanel>
+
+          {/* Mobile benefits */}
+          <div className="lg:hidden mt-8 space-y-4">
+            {benefits.map((benefit) => (
+              <div
+                key={benefit.text}
+                className="flex items-center gap-3 text-ink/70"
+              >
+                <div className="text-accent">{benefit.icon}</div>
+                <span className="font-ui text-sm">{benefit.text}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </div>
-  )
+  );
 }
-
-export default AuthPage

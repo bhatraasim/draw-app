@@ -1,169 +1,235 @@
-'use client';
+"use client";
 
-import { Pencil, Users, Zap, Download, Lock, Layers, ArrowRight, Github } from 'lucide-react';
+import { motion } from "motion/react";
+import { StudioButton } from "./components/StudioButton";
+import { GlassPanel } from "./components/GlassPanel";
+import { Pencil, Users, Zap, Square, Circle, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-function App() {
-  const Router = useRouter();
+export default function LandingPage() {
+  const router = useRouter();
+
+  const features = [
+    {
+      icon: <Pencil className="w-8 h-8" />,
+      title: "Intuitive Drawing",
+      description:
+        "Sketch ideas with precision tools that feel natural and responsive",
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: "Real-time Collaboration",
+      description:
+        "See cursors move and edits happen live as your team works together",
+    },
+    {
+      icon: <Zap className="w-8 h-8" />,
+      title: "Lightning Fast",
+      description:
+        "Optimized performance that keeps up with your creative flow",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Pencil className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">DrawBoard</span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-              <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-              <button className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors" onClick={ () => { Router.push("/signin");}} >Sign In</button>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" onClick={ () => { Router.push("/signup");}}  >
-                Get Started
-              </button>
-            </div>
+    <div className="min-h-screen relative overflow-hidden bg-surface">
+      {/* Radial gradient background */}
+      <div className="absolute inset-0 bg-gradient-radial from-accent/5 via-transparent to-transparent pointer-events-none" />
+
+      {/* Hero Section */}
+      <section className="relative z-10 px-6 pt-24 pb-32">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-6xl mx-auto text-center"
+        >
+          <h1 className="font-display text-6xl md:text-7xl lg:text-8xl mb-6 text-ink">
+            Think clearer,
+            <br />
+            draw faster
+          </h1>
+          <p className="font-ui text-xl md:text-2xl text-ink/70 mb-12 max-w-2xl mx-auto">
+            A digital canvas that feels like paper, designed for teams who
+            sketch their way to solutions
+          </p>
+          <div className="flex gap-4 justify-center">
+            <StudioButton onClick={() => router.push("/signup")}>
+              Get Started <ArrowRight className="inline ml-2" size={20} />
+            </StudioButton>
+            <StudioButton
+              variant="secondary"
+              onClick={() => router.push("/signin")}
+            >
+              Sign In
+            </StudioButton>
+          </div>
+        </motion.div>
+
+        {/* Layered Mock-up */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="max-w-5xl mx-auto mt-20 relative"
+        >
+          {/* Layer 1: Canvas Background */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 relative min-h-[400px] overflow-hidden">
+            {/* Drawing elements */}
+            <svg
+              className="w-full h-full absolute inset-0"
+              viewBox="0 0 800 400"
+              preserveAspectRatio="xMidYMid slice"
+            >
+              <motion.rect
+                x="100"
+                y="80"
+                width="200"
+                height="120"
+                fill="none"
+                stroke="#1A1A1B"
+                strokeWidth="2"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1.5, delay: 0.6 }}
+              />
+              <motion.circle
+                cx="500"
+                cy="140"
+                r="60"
+                fill="none"
+                stroke="#3050FF"
+                strokeWidth="2"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1.5, delay: 0.8 }}
+              />
+              <motion.path
+                d="M 320 140 L 420 140"
+                stroke="#1A1A1B"
+                strokeWidth="2"
+                markerEnd="url(#arrowhead)"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1, delay: 1 }}
+              />
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="10"
+                  refX="9"
+                  refY="3"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 10 3, 0 6" fill="#1A1A1B" />
+                </marker>
+              </defs>
+            </svg>
+
+            {/* Layer 2: Floating UI Panels */}
+            <GlassPanel className="absolute top-8 left-8 p-4 flex gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center hover:bg-accent/20 transition-colors cursor-pointer">
+                <Pencil className="w-5 h-5 text-accent" />
+              </div>
+              <div className="w-10 h-10 rounded-lg hover:bg-ink/5 flex items-center justify-center transition-colors cursor-pointer">
+                <Square className="w-5 h-5 text-ink" />
+              </div>
+              <div className="w-10 h-10 rounded-lg hover:bg-ink/5 flex items-center justify-center transition-colors cursor-pointer">
+                <Circle className="w-5 h-5 text-ink" />
+              </div>
+            </GlassPanel>
+
+            {/* Layer 3: Cursors */}
+            <motion.div
+              className="absolute"
+              animate={{
+                x: [100, 200, 300],
+                y: [100, 150, 80],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z"
+                  fill="#3050FF"
+                  stroke="white"
+                  strokeWidth="1"
+                />
+              </svg>
+            </motion.div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Feature Grid */}
+      <section className="relative z-10 px-6 py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <GlassPanel className="p-8 hover-lift cursor-pointer h-full">
+                  <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center mb-4 text-accent">
+                    {feature.icon}
+                  </div>
+                  <h3 className="font-ui text-xl mb-3 text-ink font-semibold">
+                    {feature.title}
+                  </h3>
+                  <p className="font-ui text-ink/70">{feature.description}</p>
+                </GlassPanel>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </nav>
+      </section>
 
-      <main className="pt-16">
-        <section className="relative overflow-hidden bg-lineat-to-br from-blue-50 via-white to-cyan-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
-            <div className="text-center">
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight mb-6">
-                Draw, Collaborate,
-                <span className="block text-blue-600">Create Together</span>
-              </h1>
-              <p className="max-w-2xl mx-auto text-xl text-gray-600 mb-10">
-                A powerful, intuitive whiteboard tool for sketching diagrams, wireframes, and ideas.
-                Real-time collaboration made simple and beautiful.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="group px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold flex items-center justify-center" 
-                onClick={ () => { Router.push("/dashboard");}}  >
-                  Start Drawing Now
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button className="px-8 py-4 bg-white text-gray-900 rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200 text-lg font-semibold flex items-center justify-center">
-                  <Github className="mr-2 w-5 h-5" />
-                  View on GitHub
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-20 relative">
-              <div className="absolute inset-0 bg-linear-to-t from-white via-transparent to-transparent z-10 pointer-events-none"></div>
-              <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center space-x-2">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  </div>
-                  <div className="flex-1 text-center text-sm text-gray-600 font-medium">DrawBoard Canvas</div>
-                </div>
-                <div className="aspect-video bg-linear-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-                  <div className="grid grid-cols-3 gap-8 p-12">
-                    <div className="w-24 h-24 bg-blue-200 rounded-lg shadow-md transform -rotate-6"></div>
-                    <div className="w-24 h-24 bg-cyan-200 rounded-full shadow-md transform rotate-12"></div>
-                    <div className="w-24 h-24 bg-teal-200 shadow-md transform -rotate-3" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-                    <div className="col-span-2 h-16 bg-blue-300 rounded-lg shadow-md transform rotate-2"></div>
-                    <div className="w-24 h-24 bg-cyan-300 rounded-lg shadow-md transform rotate-6"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Everything you need to create</h2>
-              <p className="text-xl text-gray-600">Powerful features designed for seamless collaboration</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
-                  <Pencil className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Intuitive Drawing</h3>
-                <p className="text-gray-600">Sketch freely with a natural drawing experience. Create rectangles, circles, arrows, and freehand drawings effortlessly.</p>
-              </div>
-
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-cyan-200 transition-colors">
-                  <Users className="w-6 h-6 text-cyan-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-time Collaboration</h3>
-                <p className="text-gray-600">Work together with your team in real-time. See cursors, edits, and changes as they happen.</p>
-              </div>
-
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-teal-200 transition-colors">
-                  <Zap className="w-6 h-6 text-teal-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Lightning Fast</h3>
-                <p className="text-gray-600">Built for speed with no lag. Smooth performance even with complex diagrams and multiple collaborators.</p>
-              </div>
-
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
-                  <Download className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Export Anywhere</h3>
-                <p className="text-gray-600">Export your drawings as PNG, SVG, or share a link. Your work, your way.</p>
-              </div>
-
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-cyan-200 transition-colors">
-                  <Lock className="w-6 h-6 text-cyan-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Privacy First</h3>
-                <p className="text-gray-600">Your data stays secure. End-to-end encryption ensures your ideas remain private.</p>
-              </div>
-
-              <div className="group p-8 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-teal-200 transition-colors">
-                  <Layers className="w-6 h-6 text-teal-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Infinite Canvas</h3>
-                <p className="text-gray-600">Never run out of space. Pan and zoom through an unlimited canvas for your biggest ideas.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="about" className="py-24 bg-linear-to-br from-blue-50 to-cyan-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">Ready to start creating?</h2>
-            <p className="text-xl text-gray-600 mb-10">
-              Join thousands of designers, developers, and teams who use DrawBoard to bring their ideas to life.
+      {/* CTA Band */}
+      <section className="relative z-10 px-6 py-16">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto"
+        >
+          <GlassPanel className="p-12 text-center">
+            <h2 className="font-display text-4xl mb-4 text-ink">
+              Ready to sketch?
+            </h2>
+            <p className="font-ui text-lg text-ink/70 mb-8">
+              Join teams using Studio Canvas to bring ideas to life
             </p>
-            <button className="group px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold inline-flex items-center">
-              Get Started for Free
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </section>
-      </main>
+            <StudioButton onClick={() => router.push("/signup")}>
+              Start Drawing Now
+            </StudioButton>
+          </GlassPanel>
+        </motion.div>
+      </section>
 
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Pencil className="w-6 h-6 text-blue-500" />
-              <span className="text-xl font-bold text-white">DrawBoard</span>
+      {/* Footer */}
+      <footer className="relative z-10 py-12 border-t border-muted/50">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center gap-2 mb-4 md:mb-0">
+            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+              <Pencil className="w-5 h-5 text-white" />
             </div>
-            <div className="text-sm">
-              © 2024 DrawBoard. Built with care for creators everywhere.
-            </div>
+            <span className="font-display text-xl font-semibold text-ink">
+              Studio Canvas
+            </span>
           </div>
+          <p className="font-ui text-sm text-ink/50">
+            Built with care for creators everywhere
+          </p>
         </div>
       </footer>
     </div>
   );
 }
-
-export default App;
