@@ -53,7 +53,7 @@ export default function LandingPage() {
             sketch their way to solutions
           </p>
           <div className="flex gap-4 justify-center">
-            <StudioButton onClick={() => router.push("/signup")}>
+            <StudioButton onClick={() => router.push("/dashboard")}>
               Get Started <ArrowRight className="inline ml-2" size={20} />
             </StudioButton>
             <StudioButton

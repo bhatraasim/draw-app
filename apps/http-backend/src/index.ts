@@ -43,7 +43,7 @@ app.use(cors({
     // Allow your VM IP addresses (replace with your actual VM IP)
     const allowedOrigins = [
       "http://localhost:3000",
-      "http://35.172.146.68:3000",
+      "http://35.153.224.15:3000",
       // Add your VM's public IP here
       process.env.FRONTEND_URL
     ].filter(Boolean);
