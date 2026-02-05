@@ -1,8 +1,8 @@
 name: Continuous Deployment (Prod) (Frontend)
 
-concurrency:
-  group: vm-deploy
-  cancel-in-progress: false
+# concurrency:
+#   group: vm-deploy
+#   cancel-in-progress: false
 
 on:
   push:

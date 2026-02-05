@@ -12,14 +12,11 @@ import {
 import { connectDB, User, Room, Chat } from "@repo/db";
 import bcrypt from "bcrypt";
 
-import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+import dotenv from "dotenv";
+dotenv.config({ path: "../../.env" });
 
 // Load environment variables
 config();
-
-
-
 
 declare global {
   namespace Express {
@@ -32,30 +29,36 @@ declare global {
 const app = express();
 app.use(express.json());
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow localhost for development
-    if (origin.includes('localhost')) return callback(null, true);
-    
-    // Allow your VM IP addresses (replace with your actual VM IP)
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://35.153.224.15:3000",
-      // Add your VM's public IP here
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-    
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow localhost for development
+      if (origin.includes("localhost")) return callback(null, true);
+
+      // Allow your VM IP addresses (replace with your actual VM IP)
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://35.153.224.15:3000",
+        "http://draw.rasim.online",
+        "http://draw.rasim.online:3000",
+        "http://www.draw.rasim.online",
+        "http://www.draw.rasim.online:3000",
+        // Add your VM's public IP here
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+);
 
 app.post("/signup", async (req, res) => {
   const data = CreateUserSchema.safeParse(req.body);
@@ -200,12 +203,10 @@ app.get("/chats/:roomId", async (req, res) => {
   try {
     const roomId = req.params.roomId;
 
-    const messages = await Chat.find({ roomId })
-      
-      
+    const messages = await Chat.find({ roomId });
 
     res.json({
-      messages
+      messages,
     });
   } catch (error) {
     console.error("Error fetching chats:", error);
@@ -224,47 +225,44 @@ app.get("/room/:slug", async (req, res) => {
     }
 
     res.json({
-      id: room._id,   
-      slug: room.slug
+      id: room._id,
+      slug: room.slug,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch room" });
   }
 });
 
-
 app.get("/getRooms", middleware, async (req, res) => {
-    try {
-        const adminId = req.userId; // comes from middleware
+  try {
+    const adminId = req.userId; // comes from middleware
 
-        if (!adminId) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        const rooms = await Room.find({ adminId });
-
-        res.json({
-            rooms
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Internal server error: failed to fetch rooms",
-        });
+    if (!adminId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
+
+    const rooms = await Room.find({ adminId });
+
+    res.json({
+      rooms,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error: failed to fetch rooms",
+    });
+  }
 });
 
 app.listen(3001, async () => {
   console.log("HTTP server running on 3001");
-  
+
   try {
     await connectDB();
-    
   } catch (error) {
     console.log("❌ Database connection failed:", error);
   }
 });
-
 
 // app.get("/room/:slug", async (req, res) => {
 //   try {
