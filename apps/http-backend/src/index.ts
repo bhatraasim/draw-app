@@ -41,6 +41,7 @@ app.use(
       // Allow your VM IP addresses (replace with your actual VM IP)
       const allowedOrigins = [
         "http://localhost:3000",
+        "http://35.153.224.15",
         "http://35.153.224.15:3000",
         "http://draw.rasim.online",
         "http://draw.rasim.online:3000",
