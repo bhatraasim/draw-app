@@ -27,6 +27,8 @@ services:
       PORT: 8080
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET:-defaultsecret}
+    depends_on:
+      - http-backend
     networks:
       - draw-app-network
 

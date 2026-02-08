@@ -17,7 +17,7 @@ function RoomCanvas({ roomId }: { roomId: string }) {
             ws.send(JSON.stringify({ type: "join_room", roomId: roomId }));
         }
 
-    }, []);
+    }, [roomId]);
 
 
 
