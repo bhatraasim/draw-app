@@ -2,10 +2,30 @@ import { getExistingShape } from "./http";
 import { Tool } from "../components/CCanvas";
 
 export type Shape =
-  | { id:string, type: "rect"; x: number; y: number; width: number; height: number }
-  | { id:string,type: "circle"; centerX: number; centerY: number; radius: number }
-  | {  id:string,type: "path"; points: { x: number; y: number }[] }
-  | { id:string,type: "text"; x: number; y: number; text: string; fontSize: number };
+  | {
+      id: string;
+      type: "rect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }
+  | {
+      id: string;
+      type: "circle";
+      centerX: number;
+      centerY: number;
+      radius: number;
+    }
+  | { id: string; type: "path"; points: { x: number; y: number }[] }
+  | {
+      id: string;
+      type: "text";
+      x: number;
+      y: number;
+      text: string;
+      fontSize: number;
+    };
 
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -42,8 +62,8 @@ export class Game {
     this.init();
     this.initHandlers();
     this.initMouseHandlers();
-    this.initKeyboardHandlers()
-    
+    this.initKeyboardHandlers();
+    this.makeId()
   }
 
   // Helper to convert screen clicks to "World" coordinates
@@ -61,6 +81,17 @@ export class Game {
     this.canvas.removeEventListener("mousemove", this.mouseMoveHandler);
     this.removeTextInput();
   }
+
+  makeId() {
+        if (
+          typeof crypto !== "undefined" &&
+          typeof crypto.randomUUID === "function"
+        ) {
+          return crypto.randomUUID();
+        }
+        // not crypto-secure, but fine for “temp shape id”
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      }
 
   setTool(tool: Tool) {
     this.selectedTool = tool;
@@ -115,22 +146,21 @@ export class Game {
     return false;
   }
 
-  initKeyboardHandlers(){
-    window.addEventListener( 'keydown' , (e)=>{
-      if(this.isTextInputActive) return
+  initKeyboardHandlers() {
+    window.addEventListener("keydown", (e) => {
+      if (this.isTextInputActive) return;
 
-      if( e.key === "Delete" || e.key === "Backspace"){
-        e.preventDefault()
-        this.deleteSelectedShape()
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        this.deleteSelectedShape();
       }
 
-      if( e.key == "Escape"){
-        e.preventDefault()
-        this.selectedShpae = null
-        this.clearCanvas()
+      if (e.key == "Escape") {
+        e.preventDefault();
+        this.selectedShpae = null;
+        this.clearCanvas();
       }
-
-    })
+    });
   }
   distanceToLineSegment(
     px: number,
@@ -158,72 +188,70 @@ export class Game {
     return Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
   }
 
-  deleteSelectedShape(){
-    if(!this.selectedShpae ) return
+  deleteSelectedShape() {
+    if (!this.selectedShpae) return;
 
-    //find the index of the seleted shape 
+    //find the index of the seleted shape
 
-    const index = this.existingShape.indexOf(this.selectedShpae)
-    if( index == -1 ) return
+    const index = this.existingShape.indexOf(this.selectedShpae);
+    if (index == -1) return;
 
+    this.existingShape.splice(index, 1);
 
-    this.existingShape.splice(index , 1)
-
-    const shapeIdToDelete = this.selectedShpae.id
+    const shapeIdToDelete = this.selectedShpae.id;
 
     this.socket.send(
       JSON.stringify({
         type: "delete",
-        shapeId : shapeIdToDelete,
-        roomId : this.roomId
-      })
-    )
+        shapeId: shapeIdToDelete,
+        roomId: this.roomId,
+      }),
+    );
 
     this.selectedShpae = null;
-    this.clearCanvas()
+    this.clearCanvas();
   }
 
   initHandlers() {
     this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       if (message.type === "chat") {
-
         const parsedShape = JSON.parse(message.message);
 
         if (typeof message.tempId === "string") {
-        const idx = this.existingShape.findIndex((s) => s.id === message.tempId);
-        if (idx !== -1) {
-          this.existingShape[idx].id = parsedShape.id; // mongo id string
+          const idx = this.existingShape.findIndex(
+            (s) => s.id === message.tempId,
+          );
+          if (idx !== -1) {
+            this.existingShape[idx].id = parsedShape.id; // mongo id string
+          } else {
+            this.existingShape.push(parsedShape);
+          }
         } else {
           this.existingShape.push(parsedShape);
         }
-      } else {
-        this.existingShape.push(parsedShape);
-      }
-        
-        this.clearCanvas();
-      }
-      
 
-       else if (message.type === "delete") {  
-        const index = this.existingShape.findIndex(s => s.id === message.shapeId);
-        
+        this.clearCanvas();
+      } else if (message.type === "delete") {
+        const index = this.existingShape.findIndex(
+          (s) => s.id === message.shapeId,
+        );
+
         if (index !== -1) {
           // Deselect if this was selected
           if (this.selectedShpae?.id === message.shapeId) {
             this.selectedShpae = null;
           }
-          
+
           this.existingShape.splice(index, 1);
           this.clearCanvas();
         }
-
       }
     };
   }
 
   clearCanvas() {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0); 
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.fillStyle = "#1a1a1a";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -234,14 +262,12 @@ export class Game {
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
 
-
     this.existingShape.forEach((shape) => {
-
-      const isSelected = this.selectedShpae  === shape
-      if(isSelected){
-        this.ctx.strokeStyle = "#00ff00"; 
+      const isSelected = this.selectedShpae === shape;
+      if (isSelected) {
+        this.ctx.strokeStyle = "#00ff00";
         this.ctx.lineWidth = 3;
-      }else{
+      } else {
         this.ctx.strokeStyle = "white";
         this.ctx.lineWidth = 2;
       }
@@ -281,27 +307,24 @@ export class Game {
     this.startY = e.clientY;
 
     if (this.selectedTool === "drag" || this.selectedTool === null) {
-      let shapeFound = false 
-      for( let i = this.existingShape.length - 1 ; i >= 0 ; i-- ){
-        if( this.isPointInShape(coords.x , coords.y , this.existingShape[i] ) ) {
-          this.selectedShpae = this.existingShape[i]
-          shapeFound  = true
+      let shapeFound = false;
+      for (let i = this.existingShape.length - 1; i >= 0; i--) {
+        if (this.isPointInShape(coords.x, coords.y, this.existingShape[i])) {
+          this.selectedShpae = this.existingShape[i];
+          shapeFound = true;
 
-          this.clearCanvas()
-          return
+          this.clearCanvas();
+          return;
         }
       }
 
-
-      if(!shapeFound){
-        this.selectedShpae = null
-        this.clearCanvas()
+      if (!shapeFound) {
+        this.selectedShpae = null;
+        this.clearCanvas();
       }
 
-      return
+      return;
     }
-
-
 
     if (this.selectedTool === "text") {
       this.createTextInput(coords.x, coords.y);
@@ -370,10 +393,16 @@ export class Game {
     let shape: Shape | null = null;
 
     if (this.selectedTool === "pencil") {
-      shape = {  id : crypto.randomUUID(), type: "path", points: this.currentPath };
+      
+
+      shape = {
+        id: this.makeId(),
+        type: "path",
+        points: this.currentPath,
+      };
     } else if (this.selectedTool === "rect") {
       shape = {
-        id : crypto.randomUUID(),
+        id: this.makeId(),
         type: "rect",
         x: this.startX,
         y: this.startY,
@@ -386,7 +415,7 @@ export class Game {
           Math.pow(coords.y - this.startY, 2),
       );
       shape = {
-        id : crypto.randomUUID(),
+        id: this.makeId(),
         type: "circle",
         centerX: this.startX,
         centerY: this.startY,
@@ -399,7 +428,7 @@ export class Game {
       this.socket.send(
         JSON.stringify({
           type: "chat",
-          tempId : shape.id,
+          tempId: shape.id,
           message: JSON.stringify(shape),
           roomId: this.roomId,
         }),
@@ -444,7 +473,7 @@ export class Game {
           JSON.stringify({
             type: "chat",
             message: JSON.stringify(shape),
-            tempId : shape.id,
+            tempId: shape.id,
             roomId: this.roomId,
           }),
         );
