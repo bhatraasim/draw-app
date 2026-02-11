@@ -1,5 +1,5 @@
 // import "dotenv/config";
-import dotenv, { config } from "dotenv";
+import dotenv, { config, parse } from "dotenv";
 import { WebSocket, WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import { connectDB, Chat } from "@repo/db";
@@ -99,29 +99,69 @@ wss.on("connection", async function connection(ws, request) {
     if (paresedata.type == "chat") {
       const roomId = paresedata.roomId;
       const message = paresedata.message;
+      const tempId = paresedata.tempId
 
       //store the chat in the db
       try {
-        await Chat.create({
+
+        const savedChat = await Chat.create({
           message: message,
           userId: userId,
           roomId: roomId,
         });
-      } catch (error) {
-        console.error("Error saving chat:", error);
-      }
 
-      users.forEach((user) => {
+        const parsedShape = JSON.parse(message);
+      parsedShape.id = savedChat._id.toString();
+        
+
+        users.forEach((user) => {
         if (user.rooms.includes(roomId)) {
           user.ws.send(
             JSON.stringify({
               type: "chat",
-              message: message,  
+              tempId:tempId,
+              message: JSON.stringify(parsedShape),  
               roomId,
             }),
           );
         }
       });
+
+
+      } catch (error) {
+        console.error("Error saving chat:", error);
+      }
+
+      
+    }
+
+
+    if(paresedata.type == "delete"){
+      const roomId = paresedata.roomId
+      const shapeId = paresedata.shapeId
+
+      try {
+        await Chat.deleteOne({
+          _id : shapeId,
+          roomId: roomId,
+        });
+      } catch (error) {
+        console.error("Error deleting chat:", error);
+      }
+
+      users.forEach( (user) =>{
+        if(user.rooms.includes(roomId) ){
+          user.ws.send(
+          JSON.stringify({
+            type: "delete",
+            shapeId: shapeId,
+            roomId: roomId,
+          })
+        );
+        }
+      })
+
+
     }
   });
 

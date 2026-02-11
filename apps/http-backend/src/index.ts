@@ -13,6 +13,7 @@ import { connectDB, User, Room, Chat } from "@repo/db";
 import bcrypt from "bcrypt";
 
 import dotenv from "dotenv";
+import id from "zod/v4/locales/id.js";
 dotenv.config({ path: "../../.env" });
 
 // Load environment variables
@@ -255,13 +256,39 @@ app.get("/getRooms", middleware, async (req, res) => {
   }
 });
 
+
+
+app.delete( "/deleteChat"  , middleware, async (req, res) => {
+  try {
+    const adminId = req.userId; 
+    if (!adminId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const chatId = req.body.chatId
+
+    const response = await Chat.deleteOne({ id : chatId} ) 
+    if( response.deletedCount == 0 ){
+      return res.status(404).json({ message: "Chat not found or unauthorized" })
+    }
+    return res.status(200).json({ message : " succefull deletion"})
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error: failed to fetch rooms",
+    });
+  }
+})
+
+
 app.listen(3001, async () => {
   console.log("HTTP server running on 3001");
 
   try {
     await connectDB();
   } catch (error) {
-    console.log("❌ Database connection failed:", error);
+    console.log(" Database connection failed:", error);
   }
 });
 
