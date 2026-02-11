@@ -81,12 +81,6 @@ pnpm check-types
 pnpm check-types -- --filter=web
 ```
 
-### Format
-
-```bash
-pnpm format
-```
-
 ## Architecture
 
 - **Package manager**: pnpm@10 (requires Node >=18)
