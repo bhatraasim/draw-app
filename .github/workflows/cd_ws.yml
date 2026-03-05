@@ -63,8 +63,5 @@ jobs:
             echo "Waiting for WebSocket to be healthy..."
             sleep 5
 
-            echo "Cleaning up old images..."
-            docker image prune -f
-
             echo "Current service status:"
             docker compose ps ws-backend
