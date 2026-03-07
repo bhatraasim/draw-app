@@ -1,5 +1,5 @@
 import { getExistingShape } from "./http";
-import { Tool } from "../components/CCanvas";
+import { Color, Tool } from "../components/CCanvas";
 
 export type Shape =
   | {
@@ -9,6 +9,7 @@ export type Shape =
       y: number;
       width: number;
       height: number;
+      color?:string 
     }
   | {
       id: string;
@@ -16,8 +17,9 @@ export type Shape =
       centerX: number;
       centerY: number;
       radius: number;
+      color?:string
     }
-  | { id: string; type: "path"; points: { x: number; y: number }[] }
+  | { id: string; type: "path"; points: { x: number; y: number }[] , color?:string }
   | {
       id: string;
       type: "text";
@@ -25,6 +27,7 @@ export type Shape =
       y: number;
       text: string;
       fontSize: number;
+      color?:string
     };
 
 export class Game {
@@ -42,6 +45,7 @@ export class Game {
   private startY: number = 0;
 
   private selectedTool: Tool = "rect";
+  private selectedColor : Color  = "blue"
   private isDrawing: boolean = false;
   private currentPath: { x: number; y: number }[] = [];
   private textInput: HTMLInputElement | null = null;
@@ -97,6 +101,11 @@ export class Game {
     this.selectedTool = tool;
     this.isDrawing = false;
     if (tool !== "text") this.removeTextInput();
+  }
+
+  setColor(color:Color){
+    this.selectedColor = color;
+    this.isDrawing = false;
   }
 
   async init() {
@@ -241,6 +250,7 @@ export class Game {
           // Deselect if this was selected
           if (this.selectedShpae?.id === message.shapeId) {
             this.selectedShpae = null;
+            
           }
 
           this.existingShape.splice(index, 1);
@@ -256,7 +266,7 @@ export class Game {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.ctx.translate(this.offsetX, this.offsetY);
-    this.ctx.strokeStyle = "white";
+    this.ctx.strokeStyle = this.selectedColor;  //added
     this.ctx.fillStyle = "white";
     this.ctx.lineWidth = 2;
     this.ctx.lineCap = "round";
@@ -265,16 +275,18 @@ export class Game {
     this.existingShape.forEach((shape) => {
       const isSelected = this.selectedShpae === shape;
       if (isSelected) {
-        this.ctx.strokeStyle = "#00ff00";
+        this.ctx.strokeStyle = this.selectedColor;   //added
         this.ctx.lineWidth = 3;
       } else {
-        this.ctx.strokeStyle = "white";
+        this.ctx.strokeStyle = this.selectedColor;   //added
         this.ctx.lineWidth = 2;
       }
       if (shape.type === "rect") {
+        this.ctx.strokeStyle = shape.color || "white" //added
         this.ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
       } else if (shape.type === "circle") {
         this.ctx.beginPath();
+        this.ctx.strokeStyle = shape.color || "white" //added
         this.ctx.arc(
           shape.centerX,
           shape.centerY,
@@ -285,11 +297,13 @@ export class Game {
         this.ctx.stroke();
       } else if (shape.type === "path") {
         this.ctx.beginPath();
+        this.ctx.strokeStyle = shape.color || "white" //added
         shape.points.forEach((p, i) =>
           i === 0 ? this.ctx.moveTo(p.x, p.y) : this.ctx.lineTo(p.x, p.y),
         );
         this.ctx.stroke();
       } else if (shape.type === "text") {
+        this.ctx.strokeStyle = shape.color || "white" //added
         this.ctx.font = `${shape.fontSize}px Arial`;
         this.ctx.fillText(shape.text, shape.x, shape.y);
       }
@@ -366,6 +380,7 @@ export class Game {
       );
       this.ctx.stroke();
     } else if (this.selectedTool === "rect") {
+      this.ctx.strokeStyle = this.selectedColor   //added
       this.ctx.strokeRect(
         this.startX,
         this.startY,
@@ -378,7 +393,7 @@ export class Game {
           Math.pow(coords.y - this.startY, 2),
       );
       this.ctx.beginPath();
-      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2);
+      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2 );
       this.ctx.stroke();
     }
   };
@@ -399,6 +414,8 @@ export class Game {
         id: this.makeId(),
         type: "path",
         points: this.currentPath,
+        color:this.selectedColor
+        
       };
     } else if (this.selectedTool === "rect") {
       shape = {
@@ -408,6 +425,8 @@ export class Game {
         y: this.startY,
         width: coords.x - this.startX,
         height: coords.y - this.startY,
+        color:this.selectedColor
+        
       };
     } else if (this.selectedTool === "circle") {
       const radius = Math.sqrt(
@@ -420,6 +439,7 @@ export class Game {
         centerX: this.startX,
         centerY: this.startY,
         radius,
+        color:this.selectedColor
       };
     }
 
