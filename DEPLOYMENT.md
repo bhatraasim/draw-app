@@ -555,3 +555,7 @@ docker exec -it draw-app-backend-dev sh
 | SSL Certs      | /etc/letsencrypt/live/draw.rasim.online/ |
 | App Logs       | `docker compose logs`                    |
 | Nginx Logs     | /var/log/nginx/                          |
+
+
+## Local development 
+docker compose -f docker-compose.dev.yml up
