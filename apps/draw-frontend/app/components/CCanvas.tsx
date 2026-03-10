@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { IconButton } from "./IconButton";
-import { ALargeSmall, Circle, Hand, Pencil, Square } from "lucide-react";
+import { ALargeSmall, Circle, Hand, Pencil, Redo, Square, Undo } from "lucide-react";
 import { Game } from "../draw/Game";
 import { ColorButton, Red, Blue, White } from "./ColorIconBox";
 
@@ -44,22 +44,34 @@ export default function CCanvas({ roomId, socket }: { roomId: string; socket: We
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#1a1a1a] ">
       <canvas ref={canvasRef} className="block touch-none " />
       <Topbar selectedTool={selectedTool} setSelectedTool={setSelectedTool}  selectedColor={selectedColor} setSelectedColor={setSelectedColor} />
+      <UndoRedo />
     </div>
   );
 }
 
 function Topbar({ selectedTool, setSelectedTool  , selectedColor , setSelectedColor }: { selectedTool: Tool; selectedColor :Color ; setSelectedTool: (s: Tool) => void ,  setSelectedColor: (s: Color) => void  }) {
   return (
-    <div className="fixed top-1/3 -translate-y-1/2 left-6 flex flex-col gap-2 z-10 bg-[#2a2a2a] p-2 rounded-xl border border-white/10">
-      <IconButton activated={selectedTool === "drag"} icon={<Hand className="w-5 h-5 " />} onclick={() => setSelectedTool("drag")} tooltip="Pan (D)" shortcut="D" />
-      <IconButton activated={selectedTool === "pencil"} icon={<Pencil className="w-5 h-5" />} onclick={() => setSelectedTool("pencil")} tooltip="Pencil (P)" shortcut="P" />
-      <IconButton activated={selectedTool === "rect"} icon={<Square className="w-5 h-5" />} onclick={() => setSelectedTool("rect")} tooltip="Rectangle (R)" shortcut="R" />
-      <IconButton activated={selectedTool === "circle"} icon={<Circle className="w-5 h-5" />} onclick={() => setSelectedTool("circle")} tooltip="Circle (C)" shortcut="C" />
-      <IconButton activated={selectedTool === "text"} icon={<ALargeSmall className="w-5 h-5" />} onclick={() => setSelectedTool("text")} tooltip="Text (T)" shortcut="T" />
-      <ColorButton activated={selectedColor === "white"} icon={<White />} onclick={() => setSelectedColor("white")} colortip="Color (white)" shortcut="O" />
-      <ColorButton activated={selectedColor === "red"} icon={<Red />} onclick={() => setSelectedColor("red")} colortip="Color (Orange)" shortcut="O" />
-      <ColorButton activated={selectedColor === "blue"} icon={<Blue />} onclick={() => setSelectedColor("blue")} colortip="Color (Purple)" shortcut="O" />
+     
+      <div className="fixed top-1/3 -translate-y-1/2 left-6 flex flex-col gap-2 z-10 bg-[#2a2a2a] p-2 rounded-xl border border-white/10">
+        <IconButton activated={selectedTool === "drag"} icon={<Hand className="w-5 h-5 " />} onclick={() => setSelectedTool("drag")} tooltip="Pan (D)" shortcut="D" />
+        <IconButton activated={selectedTool === "pencil"} icon={<Pencil className="w-5 h-5" />} onclick={() => setSelectedTool("pencil")} tooltip="Pencil (P)" shortcut="P" />
+        <IconButton activated={selectedTool === "rect"} icon={<Square className="w-5 h-5" />} onclick={() => setSelectedTool("rect")} tooltip="Rectangle (R)" shortcut="R" />
+        <IconButton activated={selectedTool === "circle"} icon={<Circle className="w-5 h-5" />} onclick={() => setSelectedTool("circle")} tooltip="Circle (C)" shortcut="C" />
+        <IconButton activated={selectedTool === "text"} icon={<ALargeSmall className="w-5 h-5" />} onclick={() => setSelectedTool("text")} tooltip="Text (T)" shortcut="T" />
+        <ColorButton activated={selectedColor === "white"} icon={<White />} onclick={() => setSelectedColor("white")} colortip="Color (white)" shortcut="O" />
+        <ColorButton activated={selectedColor === "red"} icon={<Red />} onclick={() => setSelectedColor("red")} colortip="Color (Orange)" shortcut="O" />
+        <ColorButton activated={selectedColor === "blue"} icon={<Blue />} onclick={() => setSelectedColor("blue")} colortip="Color (Purple)" shortcut="O" />   
       
     </div>
   );
+}
+
+
+function UndoRedo(){
+  return(
+    <div className="fixed bottom-6 right-6 bg-[#2a2a2a] p-2 z-50 rounded-2xl flex gap-6 ">
+        <Undo  className="text-white"/>
+        <Redo className="text-white" />
+      </div>
+  )
 }

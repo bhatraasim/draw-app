@@ -1,5 +1,7 @@
 import { getExistingShape } from "./http";
 import { Color, Tool } from "../components/CCanvas";
+import UndoStack from "../utils/UndoRedo";
+import { s } from "motion/react-client";
 
 export type Shape =
   | {
@@ -9,7 +11,7 @@ export type Shape =
       y: number;
       width: number;
       height: number;
-      color?:string 
+      color?: string;
     }
   | {
       id: string;
@@ -17,9 +19,14 @@ export type Shape =
       centerX: number;
       centerY: number;
       radius: number;
-      color?:string
+      color?: string;
     }
-  | { id: string; type: "path"; points: { x: number; y: number }[] , color?:string }
+  | {
+      id: string;
+      type: "path";
+      points: { x: number; y: number }[];
+      color?: string;
+    }
   | {
       id: string;
       type: "text";
@@ -27,7 +34,7 @@ export type Shape =
       y: number;
       text: string;
       fontSize: number;
-      color?:string
+      color?: string;
     };
 
 export class Game {
@@ -45,7 +52,7 @@ export class Game {
   private startY: number = 0;
 
   private selectedTool: Tool = "rect";
-  private selectedColor : Color  = "blue"
+  private selectedColor: Color = "blue";
   private isDrawing: boolean = false;
   private currentPath: { x: number; y: number }[] = [];
   private textInput: HTMLInputElement | null = null;
@@ -54,6 +61,8 @@ export class Game {
 
   private readonly MIN_POINT_DIST = 3;
   private readonly DEFAULT_FONT_SIZE = 24;
+
+  private undoRedo = new UndoStack(); // made a class for the undo redo
 
   constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     this.canvas = canvas;
@@ -67,7 +76,7 @@ export class Game {
     this.initHandlers();
     this.initMouseHandlers();
     this.initKeyboardHandlers();
-    this.makeId()
+    this.makeId();
   }
 
   // Helper to convert screen clicks to "World" coordinates
@@ -87,15 +96,15 @@ export class Game {
   }
 
   makeId() {
-        if (
-          typeof crypto !== "undefined" &&
-          typeof crypto.randomUUID === "function"
-        ) {
-          return crypto.randomUUID();
-        }
-        // not crypto-secure, but fine for “temp shape id”
-        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-      }
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+    // not crypto-secure, but fine for “temp shape id”
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
 
   setTool(tool: Tool) {
     this.selectedTool = tool;
@@ -103,7 +112,7 @@ export class Game {
     if (tool !== "text") this.removeTextInput();
   }
 
-  setColor(color:Color){
+  setColor(color: Color) {
     this.selectedColor = color;
     this.isDrawing = false;
   }
@@ -155,6 +164,46 @@ export class Game {
     return false;
   }
 
+  undo() {
+    const shape = this.undoRedo.undo();
+
+    if (shape) {
+      const index = this.existingShape.findIndex((s) => s.id === shape.id);
+      if (index !== -1) {
+        this.existingShape.splice(index, 1);
+      }
+    }
+    if (!shape) return;
+
+    this.socket.send(
+      JSON.stringify({
+        type: "delete",
+        shapeId: shape.id,
+        roomId: this.roomId,
+      }),
+    );
+
+    this.selectedShpae = null;
+    this.clearCanvas();
+  }
+
+  redo() {
+    const shape = this.undoRedo.redo();
+    if (shape) {
+      this.existingShape.push(shape);
+
+      this.socket.send(
+        JSON.stringify({
+          type: "chat",
+          tempId: shape.id,
+          message: JSON.stringify(shape),
+          roomId: this.roomId,
+        }),
+      );
+
+      this.clearCanvas();
+    }
+  }
   initKeyboardHandlers() {
     window.addEventListener("keydown", (e) => {
       if (this.isTextInputActive) return;
@@ -162,6 +211,19 @@ export class Game {
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         this.deleteSelectedShape();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        console.log("undo triggred");
+        this.undo();
+      }
+
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "y" || (e.shiftKey && e.key === "z"))
+      ) {
+        e.preventDefault();
+        this.redo();
       }
 
       if (e.key == "Escape") {
@@ -232,7 +294,9 @@ export class Game {
             (s) => s.id === message.tempId,
           );
           if (idx !== -1) {
-            this.existingShape[idx].id = parsedShape.id; // mongo id string
+            const oldId = message.tempId;
+            this.existingShape[idx].id = parsedShape.id; // mongo id string updated
+            this.undoRedo.updateId(oldId, parsedShape.id);
           } else {
             this.existingShape.push(parsedShape);
           }
@@ -250,7 +314,6 @@ export class Game {
           // Deselect if this was selected
           if (this.selectedShpae?.id === message.shapeId) {
             this.selectedShpae = null;
-            
           }
 
           this.existingShape.splice(index, 1);
@@ -266,7 +329,7 @@ export class Game {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.ctx.translate(this.offsetX, this.offsetY);
-    this.ctx.strokeStyle = this.selectedColor;  //added
+    this.ctx.strokeStyle = this.selectedColor; //added
     this.ctx.fillStyle = "white";
     this.ctx.lineWidth = 2;
     this.ctx.lineCap = "round";
@@ -275,18 +338,18 @@ export class Game {
     this.existingShape.forEach((shape) => {
       const isSelected = this.selectedShpae === shape;
       if (isSelected) {
-        this.ctx.strokeStyle = this.selectedColor;   //added
+        this.ctx.strokeStyle = this.selectedColor; //added
         this.ctx.lineWidth = 3;
       } else {
-        this.ctx.strokeStyle = this.selectedColor;   //added
+        this.ctx.strokeStyle = this.selectedColor; //added
         this.ctx.lineWidth = 2;
       }
       if (shape.type === "rect") {
-        this.ctx.strokeStyle = shape.color || "white" //added
+        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
       } else if (shape.type === "circle") {
         this.ctx.beginPath();
-        this.ctx.strokeStyle = shape.color || "white" //added
+        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.arc(
           shape.centerX,
           shape.centerY,
@@ -297,13 +360,13 @@ export class Game {
         this.ctx.stroke();
       } else if (shape.type === "path") {
         this.ctx.beginPath();
-        this.ctx.strokeStyle = shape.color || "white" //added
+        this.ctx.strokeStyle = shape.color || "white"; //added
         shape.points.forEach((p, i) =>
           i === 0 ? this.ctx.moveTo(p.x, p.y) : this.ctx.lineTo(p.x, p.y),
         );
         this.ctx.stroke();
       } else if (shape.type === "text") {
-        this.ctx.strokeStyle = shape.color || "white" //added
+        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.font = `${shape.fontSize}px Arial`;
         this.ctx.fillText(shape.text, shape.x, shape.y);
       }
@@ -380,7 +443,7 @@ export class Game {
       );
       this.ctx.stroke();
     } else if (this.selectedTool === "rect") {
-      this.ctx.strokeStyle = this.selectedColor   //added
+      this.ctx.strokeStyle = this.selectedColor; //added
       this.ctx.strokeRect(
         this.startX,
         this.startY,
@@ -393,7 +456,7 @@ export class Game {
           Math.pow(coords.y - this.startY, 2),
       );
       this.ctx.beginPath();
-      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2 );
+      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2);
       this.ctx.stroke();
     }
   };
@@ -408,14 +471,11 @@ export class Game {
     let shape: Shape | null = null;
 
     if (this.selectedTool === "pencil") {
-      
-
       shape = {
         id: this.makeId(),
         type: "path",
         points: this.currentPath,
-        color:this.selectedColor
-        
+        color: this.selectedColor,
       };
     } else if (this.selectedTool === "rect") {
       shape = {
@@ -425,8 +485,7 @@ export class Game {
         y: this.startY,
         width: coords.x - this.startX,
         height: coords.y - this.startY,
-        color:this.selectedColor
-        
+        color: this.selectedColor,
       };
     } else if (this.selectedTool === "circle") {
       const radius = Math.sqrt(
@@ -439,12 +498,13 @@ export class Game {
         centerX: this.startX,
         centerY: this.startY,
         radius,
-        color:this.selectedColor
+        color: this.selectedColor,
       };
     }
 
     if (shape) {
       this.existingShape.push(shape);
+      this.undoRedo.push(shape); // added to the stack
       this.socket.send(
         JSON.stringify({
           type: "chat",
