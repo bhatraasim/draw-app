@@ -44,7 +44,7 @@ export default function CCanvas({ roomId, socket }: { roomId: string; socket: We
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#1a1a1a] ">
       <canvas ref={canvasRef} className="block touch-none " />
       <Topbar selectedTool={selectedTool} setSelectedTool={setSelectedTool}  selectedColor={selectedColor} setSelectedColor={setSelectedColor} />
-      <UndoRedo />
+      <UndoRedo  game={game} onUndo={() => game?.undo()} onRedo={() => game?.redo()}/>
     </div>
   );
 }
@@ -67,11 +67,31 @@ function Topbar({ selectedTool, setSelectedTool  , selectedColor , setSelectedCo
 }
 
 
-function UndoRedo(){
-  return(
-    <div className="fixed bottom-6 right-6 bg-[#2a2a2a] p-2 z-50 rounded-2xl flex gap-6 ">
-        <Undo  className="text-white"/>
-        <Redo className="text-white" />
-      </div>
-  )
+
+function UndoRedo({ 
+  game, 
+  onUndo, 
+  onRedo 
+}: { 
+  game: Game | undefined; 
+  onUndo: () => void; 
+  onRedo: () => void;
+}) {
+  return (
+    <div className="fixed bottom-6 right-6 flex gap-2 z-10">
+      <IconButton 
+        icon={<Undo className="w-5 h-5" />} 
+        onclick={onUndo} 
+        tooltip="Undo (Ctrl+Z)" 
+        shortcut="Ctrl+Z"
+      />
+      <IconButton 
+        icon={<Redo className="w-5 h-5" />} 
+        onclick={onRedo} 
+        tooltip="Redo (Ctrl+Y)" 
+        shortcut="Ctrl+Y"
+        
+      />
+    </div>
+  );
 }
