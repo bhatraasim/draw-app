@@ -1,7 +1,6 @@
 import { getExistingShape } from "./http";
 import { Color, Tool } from "../components/CCanvas";
 import UndoStack from "../utils/UndoRedo";
-import { s } from "motion/react-client";
 
 export type Shape =
   | {
