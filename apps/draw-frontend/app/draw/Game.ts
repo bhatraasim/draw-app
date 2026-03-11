@@ -90,7 +90,8 @@ export class Game {
 
   // Helper to convert touch events to coordinates
   private getTouchCoords(e: TouchEvent) {
-    const touch = e.touches[0];
+    // Use changedTouches for touchend (finger lifted), touches for others
+    const touch = e.touches[0] || e.changedTouches[0];
     const rect = this.canvas.getBoundingClientRect();
     return {
       x: touch.clientX - rect.left - this.offsetX,
