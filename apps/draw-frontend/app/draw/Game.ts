@@ -88,10 +88,25 @@ export class Game {
     };
   }
 
+  // Helper to convert touch events to coordinates
+  private getTouchCoords(e: TouchEvent) {
+    const touch = e.touches[0];
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: touch.clientX - rect.left - this.offsetX,
+      y: touch.clientY - rect.top - this.offsetY,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    };
+  }
+
   destroy() {
     this.canvas.removeEventListener("mousedown", this.mouseDownHandler);
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler);
     this.canvas.removeEventListener("mousemove", this.mouseMoveHandler);
+    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
+    this.canvas.removeEventListener("touchend", this.touchEndHandler);
+    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
     this.removeTextInput();
   }
 
@@ -521,6 +536,158 @@ export class Game {
     this.clearCanvas();
   };
 
+  // Touch event handlers - map to mouse handlers
+  touchStartHandler = (e: TouchEvent) => {
+    e.preventDefault();
+    if (this.isTextInputActive) return;
+
+    this.clicked = true;
+    const coords = this.getTouchCoords(e);
+
+    // For panning, we need raw screen coords
+    this.startX = coords.clientX;
+    this.startY = coords.clientY;
+
+    if (this.selectedTool === "drag" || this.selectedTool === null) {
+      let shapeFound = false;
+      for (let i = this.existingShape.length - 1; i >= 0; i--) {
+        if (this.isPointInShape(coords.x, coords.y, this.existingShape[i])) {
+          this.selectedShpae = this.existingShape[i];
+          shapeFound = true;
+          this.clearCanvas();
+          return;
+        }
+      }
+
+      if (!shapeFound) {
+        this.selectedShpae = null;
+        this.clearCanvas();
+      }
+      return;
+    }
+
+    if (this.selectedTool === "text") {
+      this.createTextInput(coords.x, coords.y);
+      return;
+    }
+
+    // Capture starting world coordinates for drawing
+    this.startX = coords.x;
+    this.startY = coords.y;
+
+    if (this.selectedTool === "pencil") {
+      this.isDrawing = true;
+      this.currentPath = [{ x: coords.x, y: coords.y }];
+    }
+  };
+
+  touchMoveHandler = (e: TouchEvent) => {
+    e.preventDefault();
+    if (!this.clicked) return;
+
+    const coords = this.getTouchCoords(e);
+
+    if (this.selectedTool === "drag") {
+      const dx = coords.clientX - this.startX;
+      const dy = coords.clientY - this.startY;
+      this.offsetX += dx;
+      this.offsetY += dy;
+      this.startX = coords.clientX;
+      this.startY = coords.clientY;
+      this.clearCanvas();
+      return;
+    }
+
+    this.clearCanvas();
+
+    if (this.selectedTool === "pencil" && this.isDrawing) {
+      this.currentPath.push(coords);
+      this.ctx.beginPath();
+      this.currentPath.forEach((p, i) =>
+        i === 0 ? this.ctx.moveTo(p.x, p.y) : this.ctx.lineTo(p.x, p.y),
+      );
+      this.ctx.stroke();
+    } else if (this.selectedTool === "rect") {
+      this.ctx.strokeStyle = this.selectedColor;
+      this.ctx.strokeRect(
+        this.startX,
+        this.startY,
+        coords.x - this.startX,
+        coords.y - this.startY,
+      );
+    } else if (this.selectedTool === "circle") {
+      const radius = Math.sqrt(
+        Math.pow(coords.x - this.startX, 2) +
+          Math.pow(coords.y - this.startY, 2),
+      );
+      this.ctx.beginPath();
+      this.ctx.arc(this.startX, this.startY, radius, 0, Math.PI * 2);
+      this.ctx.stroke();
+    }
+  };
+
+  touchEndHandler = (e: TouchEvent) => {
+    e.preventDefault();
+    if (!this.clicked || this.selectedTool === "drag") {
+      this.clicked = false;
+      return;
+    }
+
+    // Use the last known coordinates from touch
+    const coords = this.getTouchCoords(e);
+    let shape: Shape | null = null;
+
+    if (this.selectedTool === "pencil") {
+      shape = {
+        id: this.makeId(),
+        type: "path",
+        points: this.currentPath,
+        color: this.selectedColor,
+      };
+    } else if (this.selectedTool === "rect") {
+      shape = {
+        id: this.makeId(),
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width: coords.x - this.startX,
+        height: coords.y - this.startY,
+        color: this.selectedColor,
+      };
+    } else if (this.selectedTool === "circle") {
+      const radius = Math.sqrt(
+        Math.pow(coords.x - this.startX, 2) +
+          Math.pow(coords.y - this.startY, 2),
+      );
+      shape = {
+        id: this.makeId(),
+        type: "circle",
+        centerX: this.startX,
+        centerY: this.startY,
+        radius,
+        color: this.selectedColor,
+      };
+    }
+
+    if (shape) {
+      this.existingShape.push(shape);
+      this.undoRedo.push(shape);
+      this.socket.send(
+        JSON.stringify({
+          type: "chat",
+          tempId: shape.id,
+          message: JSON.stringify(shape),
+          roomId: this.roomId,
+        }),
+      );
+    }
+
+    this.clicked = false;
+    this.isDrawing = false;
+    this.currentPath = [];
+    this.clearCanvas();
+  };
+
   // ... (Keep existing text input methods but update input.style.left/top using this.offsetX/Y)
   createTextInput(x: number, y: number) {
     this.removeTextInput();
@@ -577,6 +744,17 @@ export class Game {
     this.canvas.addEventListener("mousedown", this.mouseDownHandler);
     this.canvas.addEventListener("mouseup", this.mouseUpHandler);
     this.canvas.addEventListener("mousemove", this.mouseMoveHandler);
+
+    // Touch events for mobile support
+    this.canvas.addEventListener("touchstart", this.touchStartHandler, {
+      passive: false,
+    });
+    this.canvas.addEventListener("touchend", this.touchEndHandler, {
+      passive: false,
+    });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandler, {
+      passive: false,
+    });
   }
 }
 

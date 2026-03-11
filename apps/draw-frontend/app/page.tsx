@@ -113,7 +113,7 @@ export default function LandingPage() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="max-w-5xl mx-auto mt-20 relative"
         >
-          <div className="bg-white rounded-2xl shadow-2xl p-8 relative min-h-[400px] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 relative min-h-100 overflow-hidden">
 
             <svg
               className="w-full h-full absolute inset-0"
