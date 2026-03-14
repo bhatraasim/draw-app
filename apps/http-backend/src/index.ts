@@ -15,6 +15,7 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import id from "zod/v4/locales/id.js";
 dotenv.config({ path: "../../.env" });
+import { OpenAI } from "openai";
 
 // Load environment variables
 config();
@@ -27,8 +28,12 @@ declare global {
   }
 }
 
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use(
   cors({
@@ -256,31 +261,81 @@ app.get("/getRooms", middleware, async (req, res) => {
   }
 });
 
-
-
-app.delete( "/deleteChat"  , middleware, async (req, res) => {
+app.delete("/deleteChat", middleware, async (req, res) => {
   try {
-    const adminId = req.userId; 
+    const adminId = req.userId;
     if (!adminId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const chatId = req.body.chatId
+    const chatId = req.body.chatId;
 
-    const response = await Chat.deleteOne({ id : chatId} ) 
-    if( response.deletedCount == 0 ){
-      return res.status(404).json({ message: "Chat not found or unauthorized" })
+    const response = await Chat.deleteOne({ id: chatId });
+    if (response.deletedCount == 0) {
+      return res
+        .status(404)
+        .json({ message: "Chat not found or unauthorized" });
     }
-    return res.status(200).json({ message : " succefull deletion"})
-
+    return res.status(200).json({ message: " succefull deletion" });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       message: "Internal server error: failed to fetch rooms",
     });
   }
-})
+});
 
+app.post("/getAiResponse", middleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const base64Image = req.body.base64Image;
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o",
+      temperature: 0,
+      messages: [
+        {
+          role: "system",
+          content: "You are a highly capable AI assistant that can read images containing hand-drawn or text-based math and physics questions. Your task is to look at the user's provided canvas drawing image, extract the question, solve it step by step, and output a short, accurate final answer. The image has a dark background with white shapes and text drawn on an HTML canvas. IMPORTANT: Your response will be rendered as plain text on a canvas. Do NOT use LaTeX, markdown, or any special formatting. Use plain text only. Use unicode symbols like π, ², ³, ×, ÷, √, ≈ instead of LaTeX commands. For example write 'Area = π × r² = π × 25 = 78.54 m²' NOT '\\text{Area} = \\pi r^2'."
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Here is an image containing a problem drawn on a dark canvas. Please read the shapes and text carefully, then solve it. Remember: respond in plain text only, no LaTeX, no markdown. Use symbols like π, ², √ directly.",
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: base64Image,
+                detail: "high",
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 400,
+    });
+
+    res.status(200).json({
+      message: "Success",
+      data: response.choices[0]?.message.content || "No response generated.",
+    });
+  } catch (error: any) {
+    console.log(error);
+
+    res.status(500).json({
+      message: "server error : failed to do openai thing",
+      error: error.message,
+    });
+  }
+});
 
 app.listen(3001, async () => {
   console.log("HTTP server running on 3001");

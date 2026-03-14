@@ -62,6 +62,8 @@ export class Game {
   private readonly DEFAULT_FONT_SIZE = 24;
 
   private undoRedo = new UndoStack(); // made a class for the undo redo
+  public aiReponse: string | null = null;
+  private aiResponseLines: Shape[] = [];
 
   private selectionBox: {
     x: number;
@@ -69,6 +71,10 @@ export class Game {
     width: number;
     height: number;
   } | null = null;
+
+  get hasSelection(): boolean {
+    return this.selectionBox !== null;
+  }
 
   constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     this.canvas = canvas;
@@ -78,11 +84,136 @@ export class Game {
     this.socket = socket;
     this.clicked = false;
 
+    // Restore saved viewport position for this room
+    const saved = localStorage.getItem(`viewport:${roomId}`);
+    if (saved) {
+      const { x, y } = JSON.parse(saved);
+      this.offsetX = x;
+      this.offsetY = y;
+    }
+
     this.init();
     this.initHandlers();
     this.initMouseHandlers();
     this.initKeyboardHandlers();
     this.makeId();
+  }
+
+  // Add AI response as text shapes and broadcast
+  addAiResponse(response: string) {
+    this.aiReponse = response;
+    this.aiResponseLines = [];
+
+    const fontSize = 16;
+    const padding = 20;
+    const maxWidth = 400; // Limit width for better readability instead of canvas width
+
+    // Base coordinates
+    let startX = this.selectionBox ? this.selectionBox.x : 50;
+    let startY = 0;
+
+    if (this.selectionBox) {
+      startY = this.selectionBox.y + this.selectionBox.height + 20;
+    } else {
+      startY = 50;
+    }
+
+    const textX = startX + padding;
+    let currentTextY = startY + padding + fontSize;
+
+    const shapesToAdd: Shape[] = [];
+
+    // Add "AI Response:" as first line
+    const headerShape: Shape = {
+      id: this.makeId(),
+      type: "text",
+      x: textX,
+      y: currentTextY,
+      text: "AI Response:",
+      fontSize: fontSize + 2,
+      color: "#fbbf24", // amber-400
+    };
+    shapesToAdd.push(headerShape);
+    currentTextY += fontSize + 10;
+
+    // Word wrap the response
+    const words = response.split(" ");
+    let line = "";
+    
+    // Using a temporary canvas context font to measure accurately
+    this.ctx.font = `${fontSize}px Arial`;
+
+    for (const word of words) {
+      const testLine = line + word + " ";
+      const metrics = this.ctx.measureText(testLine);
+
+      if (metrics.width > maxWidth - (padding * 2) && line !== "") {
+        const textShape: Shape = {
+          id: this.makeId(),
+          type: "text",
+          x: textX,
+          y: currentTextY,
+          text: line.trim(),
+          fontSize,
+          color: "#f3f4f6", // gray-100
+        };
+        shapesToAdd.push(textShape);
+        currentTextY += fontSize + 8;
+        line = word + " ";
+      } else {
+        line = testLine;
+      }
+    }
+
+    // Add last line
+    if (line.trim()) {
+      const textShape: Shape = {
+        id: this.makeId(),
+        type: "text",
+        x: textX,
+        y: currentTextY,
+        text: line.trim(),
+        fontSize,
+        color: "#f3f4f6",
+      };
+      shapesToAdd.push(textShape);
+      currentTextY += fontSize + 8;
+    }
+
+    // Calculate background dimensions based on content
+    const totalHeight = (currentTextY - startY) + padding - fontSize;
+    const rectWidth = maxWidth;
+
+    // Create the background rectangle
+    const bgShape: Shape = {
+      id: this.makeId(),
+      type: "rect",
+      x: startX,
+      y: startY,
+      width: rectWidth,
+      height: totalHeight,
+      color: "#1e1e1e", // dark gray background
+    };
+
+    // Prepend background shape so it renders behind text
+    shapesToAdd.unshift(bgShape);
+
+    // Add all lines to existingShape and broadcast
+    for (const shape of shapesToAdd) {
+      this.existingShape.push(shape);
+      this.undoRedo.push(shape);
+      this.socket.send(
+        JSON.stringify({
+          type: "chat",
+          tempId: shape.id,
+          message: JSON.stringify(shape),
+          roomId: this.roomId,
+        }),
+      );
+    }
+
+    this.aiResponseLines = shapesToAdd; // store reference
+    this.clearCanvas();
   }
 
   // Helper to convert screen clicks to "World" coordinates
@@ -228,31 +359,40 @@ export class Game {
   }
 
   getSelectedImage() {
-  if (!this.selectionBox) return null;
+    if (!this.selectionBox) return null;
 
-  const { x, y, width, height } = this.selectionBox;
-  
-  // Use absolute values for dimensions
-  const absWidth = Math.abs(width);
-  const absHeight = Math.abs(height);
-  const startX = width < 0 ? x + width : x;
-  const startY = height < 0 ? y + height : y;
+    const { x, y, width, height } = this.selectionBox;
 
-  // Get the pixel data directly from the context
-  // This automatically handles the canvas transform!
-  const imageData = this.ctx.getImageData(startX, startY, absWidth, absHeight);
-  
-  // Create temp canvas
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = absWidth;
-  tempCanvas.height = absHeight;
-  const tempCtx = tempCanvas.getContext("2d")!;
-  
-  // Put the image data
-  tempCtx.putImageData(imageData, 0, 0);
-  
-  return tempCanvas.toDataURL("image/png");
-}
+    // Use absolute values for dimensions
+    const absWidth = Math.abs(width);
+    const absHeight = Math.abs(height);
+    const worldX = width < 0 ? x + width : x;
+    const worldY = height < 0 ? y + height : y;
+
+    // IMPORTANT: getImageData does NOT respect canvas transforms.
+    // Selection box coords are in world space, but getImageData reads
+    // raw pixel data. We must add the pan offset to get screen coords.
+    const screenX = worldX + this.offsetX;
+    const screenY = worldY + this.offsetY;
+
+    const imageData = this.ctx.getImageData(
+      screenX,
+      screenY,
+      absWidth,
+      absHeight,
+    );
+
+    // Create temp canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = absWidth;
+    tempCanvas.height = absHeight;
+    const tempCtx = tempCanvas.getContext("2d")!;
+
+    // Put the image data
+    tempCtx.putImageData(imageData, 0, 0);
+
+    return tempCanvas.toDataURL("image/png");
+  }
 
   clearSelection() {
     this.selectionBox = null;
@@ -392,20 +532,21 @@ export class Game {
 
     this.existingShape.forEach((shape) => {
       const isSelected = this.selectedShpae === shape;
+      const renderColor = isSelected ? "darkred" : (shape.color || "white");
 
       if (isSelected) {
-        this.ctx.strokeStyle = this.selectedColor; //added
         this.ctx.lineWidth = 3;
       } else {
-        this.ctx.strokeStyle = this.selectedColor; //added
         this.ctx.lineWidth = 2;
       }
+
+      this.ctx.strokeStyle = renderColor;
+      this.ctx.fillStyle = renderColor;
+
       if (shape.type === "rect") {
-        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
       } else if (shape.type === "circle") {
         this.ctx.beginPath();
-        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.arc(
           shape.centerX,
           shape.centerY,
@@ -416,20 +557,19 @@ export class Game {
         this.ctx.stroke();
       } else if (shape.type === "path") {
         this.ctx.beginPath();
-        this.ctx.strokeStyle = shape.color || "white"; //added
         shape.points.forEach((p, i) =>
           i === 0 ? this.ctx.moveTo(p.x, p.y) : this.ctx.lineTo(p.x, p.y),
         );
         this.ctx.stroke();
       } else if (shape.type === "text") {
-        this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.font = `${shape.fontSize}px Arial`;
         this.ctx.fillText(shape.text, shape.x, shape.y);
       }
 
       if (this.selectionBox) {
         this.ctx.save();
-        this.ctx.strokeStyle = "grey";
+        this.ctx.strokeStyle = "darkred";
+        this.ctx.lineWidth = 2;
         this.ctx.setLineDash([5, 3]);
         this.ctx.strokeRect(
           this.selectionBox.x,
@@ -520,7 +660,8 @@ export class Game {
       };
 
       this.ctx.save();
-      this.ctx.strokeStyle = "grey";
+      this.ctx.strokeStyle = "darkred";
+      this.ctx.lineWidth = 2;
       this.ctx.setLineDash([5, 3]);
       this.ctx.strokeRect(
         this.selectionBox.x,
@@ -551,6 +692,10 @@ export class Game {
   mouseUpHandler = (e: MouseEvent) => {
     if (!this.clicked || this.selectedTool === "drag") {
       this.clicked = false;
+      // Save viewport position after panning
+      if (this.selectedTool === "drag") {
+        localStorage.setItem(`viewport:${this.roomId}`, JSON.stringify({ x: this.offsetX, y: this.offsetY }));
+      }
       return;
     }
 
@@ -714,6 +859,10 @@ export class Game {
     e.preventDefault();
     if (!this.clicked || this.selectedTool === "drag") {
       this.clicked = false;
+      // Save viewport position after panning
+      if (this.selectedTool === "drag") {
+        localStorage.setItem(`viewport:${this.roomId}`, JSON.stringify({ x: this.offsetX, y: this.offsetY }));
+      }
       return;
     }
 

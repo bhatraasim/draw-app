@@ -17,8 +17,19 @@ import { Game } from "../draw/Game";
 import { ColorButton, Red, Blue, White } from "./ColorIconBox";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import axios from "axios";
+import { BACKEND_URL } from "../conif";
+import { response } from "express";
+import { json } from "stream/consumers";
 
-export type Tool = "circle" | "pencil" | "rect" | "line" | "text" | "drag" | "selection";
+export type Tool =
+  | "circle"
+  | "pencil"
+  | "rect"
+  | "line"
+  | "text"
+  | "drag"
+  | "selection";
 export type Color = "red" | "white" | "blue";
 
 export default function CCanvas({
@@ -32,6 +43,7 @@ export default function CCanvas({
   const [selectedTool, setSelectedTool] = useState<Tool>("rect");
   const [selectedColor, setSelectedColor] = useState<Color>("white");
   const [game, setGame] = useState<Game>();
+  const [isAILoading, setIsAILoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,16 +72,51 @@ export default function CCanvas({
     };
   }, [roomId, socket]);
 
-  const handleAIGenerate = () => {
+  const handleAIGenerate = async () => {
+    if (!game?.hasSelection) {
+      alert("Please select an area first using the selection tool");
+      return;
+    }
 
-    const image = game?.getSelectedImage()
+    const image = game?.getSelectedImage();
 
-    //sending the req to the backend 
-    console.log("Send canvas to AI");
-    console.log("here is the base64 image : ", image);
-    
-    game?.clearSelection()
-    
+    //sending the req to the backend
+
+    const token = localStorage.getItem("token");
+
+    // Security Check: Redirect if no token
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+
+    setIsAILoading(true);
+
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/getAiResponse`,
+        {
+          base64Image: image,
+        },
+        {
+          headers: { Authorization: token },
+        },
+      );
+
+      console.log(response.data.data);
+
+      if (game) {
+        game.addAiResponse(String(response.data.data));
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setIsAILoading(false);
+    }
+
+    if (game) {
+      game.clearSelection();
+    }
   };
 
   return (
@@ -96,7 +143,7 @@ export default function CCanvas({
 
       <UndoRedo onUndo={() => game?.undo()} onRedo={() => game?.redo()} />
 
-      <AIGenerate onGenerate={handleAIGenerate} />
+      <AIGenerate onGenerate={handleAIGenerate} isLoading={isAILoading} />
     </div>
   );
 }
@@ -217,8 +264,10 @@ function UndoRedo({
 
 function AIGenerate({
   onGenerate,
+  isLoading,
 }: {
   onGenerate: () => void;
+  isLoading: boolean;
 }) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-20">
@@ -226,10 +275,21 @@ function AIGenerate({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onGenerate}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-lg transition border border-white/10"
+        disabled={isLoading}
+        className={`flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg transition border border-white/10 ${
+          isLoading
+            ? "bg-gray-600 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+        }`}
       >
-        <Wand2 className="w-5 h-5" />
-        <span className="text-sm font-medium">Spark</span>
+        {isLoading ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Wand2 className="w-5 h-5" />
+        )}
+        <span className="text-sm font-medium">
+          {isLoading ? "Generating..." : "Spark"}
+        </span>
       </motion.button>
     </div>
   );
