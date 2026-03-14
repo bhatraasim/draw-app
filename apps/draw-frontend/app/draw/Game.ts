@@ -63,6 +63,13 @@ export class Game {
 
   private undoRedo = new UndoStack(); // made a class for the undo redo
 
+  private selectionBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null = null;
+
   constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
@@ -219,6 +226,39 @@ export class Game {
       this.clearCanvas();
     }
   }
+
+  getSelectedImage() {
+  if (!this.selectionBox) return null;
+
+  const { x, y, width, height } = this.selectionBox;
+  
+  // Use absolute values for dimensions
+  const absWidth = Math.abs(width);
+  const absHeight = Math.abs(height);
+  const startX = width < 0 ? x + width : x;
+  const startY = height < 0 ? y + height : y;
+
+  // Get the pixel data directly from the context
+  // This automatically handles the canvas transform!
+  const imageData = this.ctx.getImageData(startX, startY, absWidth, absHeight);
+  
+  // Create temp canvas
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = absWidth;
+  tempCanvas.height = absHeight;
+  const tempCtx = tempCanvas.getContext("2d")!;
+  
+  // Put the image data
+  tempCtx.putImageData(imageData, 0, 0);
+  
+  return tempCanvas.toDataURL("image/png");
+}
+
+  clearSelection() {
+    this.selectionBox = null;
+    this.clearCanvas();
+  }
+
   initKeyboardHandlers() {
     window.addEventListener("keydown", (e) => {
       if (this.isTextInputActive) return;
@@ -352,6 +392,7 @@ export class Game {
 
     this.existingShape.forEach((shape) => {
       const isSelected = this.selectedShpae === shape;
+
       if (isSelected) {
         this.ctx.strokeStyle = this.selectedColor; //added
         this.ctx.lineWidth = 3;
@@ -384,6 +425,19 @@ export class Game {
         this.ctx.strokeStyle = shape.color || "white"; //added
         this.ctx.font = `${shape.fontSize}px Arial`;
         this.ctx.fillText(shape.text, shape.x, shape.y);
+      }
+
+      if (this.selectionBox) {
+        this.ctx.save();
+        this.ctx.strokeStyle = "grey";
+        this.ctx.setLineDash([5, 3]);
+        this.ctx.strokeRect(
+          this.selectionBox.x,
+          this.selectionBox.y,
+          this.selectionBox.width,
+          this.selectionBox.height,
+        );
+        this.ctx.restore();
       }
     });
   }
@@ -457,6 +511,24 @@ export class Game {
         i === 0 ? this.ctx.moveTo(p.x, p.y) : this.ctx.lineTo(p.x, p.y),
       );
       this.ctx.stroke();
+    } else if (this.selectedTool === "selection") {
+      this.selectionBox = {
+        x: this.startX,
+        y: this.startY,
+        width: coords.x - this.startX,
+        height: coords.y - this.startY,
+      };
+
+      this.ctx.save();
+      this.ctx.strokeStyle = "grey";
+      this.ctx.setLineDash([5, 3]);
+      this.ctx.strokeRect(
+        this.selectionBox.x,
+        this.selectionBox.y,
+        this.selectionBox.width,
+        this.selectionBox.height,
+      );
+      this.ctx.restore();
     } else if (this.selectedTool === "rect") {
       this.ctx.strokeStyle = this.selectedColor; //added
       this.ctx.strokeRect(
@@ -492,6 +564,18 @@ export class Game {
         points: this.currentPath,
         color: this.selectedColor,
       };
+    }
+    if (this.selectedTool === "selection") {
+      this.selectionBox = {
+        x: this.startX,
+        y: this.startY,
+        width: coords.x - this.startX,
+        height: coords.y - this.startY,
+      };
+
+      this.clicked = false;
+      this.clearCanvas();
+      return;
     } else if (this.selectedTool === "rect") {
       shape = {
         id: this.makeId(),

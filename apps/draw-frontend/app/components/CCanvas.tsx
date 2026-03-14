@@ -10,13 +10,15 @@ import {
   Square,
   Undo,
   ArrowLeft,
+  SquareDashedIcon,
+  Wand2,
 } from "lucide-react";
 import { Game } from "../draw/Game";
 import { ColorButton, Red, Blue, White } from "./ColorIconBox";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
-export type Tool = "circle" | "pencil" | "rect" | "line" | "text" | "drag";
+export type Tool = "circle" | "pencil" | "rect" | "line" | "text" | "drag" | "selection";
 export type Color = "red" | "white" | "blue";
 
 export default function CCanvas({
@@ -58,6 +60,18 @@ export default function CCanvas({
     };
   }, [roomId, socket]);
 
+  const handleAIGenerate = () => {
+
+    const image = game?.getSelectedImage()
+
+    //sending the req to the backend 
+    console.log("Send canvas to AI");
+    console.log("here is the base64 image : ", image);
+    
+    game?.clearSelection()
+    
+  };
+
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#1a1a1a]">
       <canvas ref={canvasRef} className="block touch-none" />
@@ -81,6 +95,8 @@ export default function CCanvas({
       />
 
       <UndoRedo onUndo={() => game?.undo()} onRedo={() => game?.redo()} />
+
+      <AIGenerate onGenerate={handleAIGenerate} />
     </div>
   );
 }
@@ -104,6 +120,14 @@ function Topbar({
         onclick={() => setSelectedTool("drag")}
         tooltip="Pan (D)"
         shortcut="D"
+      />
+
+      <IconButton
+        activated={selectedTool === "selection"}
+        icon={<SquareDashedIcon className="w-5 h-5" />}
+        onclick={() => setSelectedTool("selection")}
+        tooltip="Selection"
+        shortcut="S"
       />
 
       <IconButton
@@ -187,6 +211,26 @@ function UndoRedo({
         tooltip="Redo (Ctrl+Y)"
         shortcut="Ctrl+Y"
       />
+    </div>
+  );
+}
+
+function AIGenerate({
+  onGenerate,
+}: {
+  onGenerate: () => void;
+}) {
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-20">
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onGenerate}
+        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-lg transition border border-white/10"
+      >
+        <Wand2 className="w-5 h-5" />
+        <span className="text-sm font-medium">Spark</span>
+      </motion.button>
     </div>
   );
 }
